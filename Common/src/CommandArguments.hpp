@@ -22,7 +22,8 @@ class CommandArguments
         {
             T value;
             std::stringstream ss;
-            ss << arguments[arg] >> value;
+            ss << arguments[arg];
+            ss >> value;
             return value;
         }
 

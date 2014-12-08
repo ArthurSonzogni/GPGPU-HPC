@@ -35,6 +35,7 @@ include_directories(
     ${SRC}
     ${MPI_INCLUDE_PATH}
     ${common_files}
+    ${INC}
 )
 
 # libs
@@ -42,7 +43,6 @@ target_link_libraries(
     ${PROJECT_NAME}
     ${MPI_LIBRARIES}
     ${COM}
-    ${INC}
 )
 
 # command run

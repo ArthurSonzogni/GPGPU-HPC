@@ -8,6 +8,8 @@ project(${PROJECT_NAME})
 set(BIN ${PROJECT_SOURCE_DIR}/bin)
 set(SRC ${PROJECT_SOURCE_DIR}/src)
 
+# executable under ./bin
+set(EXECUTABLE_OUTPUT_PATH ${BIN})
 
 # find files
 file(GLOB_RECURSE source_files ${SRC}/*)

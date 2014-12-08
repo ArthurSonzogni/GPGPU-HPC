@@ -19,6 +19,11 @@ file(GLOB_RECURSE source_files ${SRC}/*)
 # Finding libs
 find_package(CUDA REQUIRED)
 
+# set some options
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wno-unused-parameter")
+set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} -O3 -gencode arch=compute_12,code=sm_12 -ccbin g++")
+
+
 cuda_add_executable(
     ${PROJECT_NAME}
     ${source_files}
@@ -43,6 +48,5 @@ add_custom_target(run
     WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
 )
 
-# set some options
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wno-reorder -Wno-unused-parameter")
-set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} -O3 -gencode arch=compute_22,code=sm_22")
+
+message(STATUS ${CUDA_NVCC_FLAGS})

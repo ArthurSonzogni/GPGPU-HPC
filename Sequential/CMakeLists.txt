@@ -12,6 +12,14 @@ set(INC ${PROJECT_SOURCE_DIR}/../Common/include)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wno-reorder -Wno-unused-parameter")
 
+# release build type by default
+if(NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE "Release" CACHE STRING
+        "Choose the type of build, options are: Debug Release
+        RelWithDebInfo MinSizeRel."
+        FORCE)
+endif(NOT CMAKE_BUILD_TYPE)
+
 # output dir under ./bin
 set(EXECUTABLE_OUTPUT_PATH ${BIN})
 

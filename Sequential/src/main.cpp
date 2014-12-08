@@ -1,6 +1,6 @@
 #include "CommandArguments.hpp"
 #include <iostream>
-#include <glm.hpp>
+#include "Simulator.hpp"
 
 int main(int argc, const char *argv[])
 {
@@ -23,6 +23,18 @@ int main(int argc, const char *argv[])
     std::cout << "arguments : " << std::endl;
     std::cout << arguments.print() << std::endl;
 
+    // extract the arguments
+    int agents = arguments.get<int>("agents");
+    int steps  = arguments.get<int>("steps");
+    double wc =  arguments.get<double>("wc");
+    double wa =  arguments.get<double>("wa");
+    double ws =  arguments.get<double>("ws");
+    double rc =  arguments.get<double>("rc");
+    double ra =  arguments.get<double>("ra");
+    double rs =  arguments.get<double>("rs");
+
+    Simulator simulator(agents,steps,wc,wa,ws,rc,ra,rs);
+    simulator.run();
     
     return 0;
 }

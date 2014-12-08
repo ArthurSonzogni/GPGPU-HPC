@@ -13,6 +13,14 @@ set(INC ${PROJECT_SOURCE_DIR}/../Common/include)
 # output dir under ./bin
 set(EXECUTABLE_OUTPUT_PATH ${BIN})
 
+# release build type by default
+if(NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE "Release" CACHE STRING
+        "Choose the type of build, options are: Debug Release
+        RelWithDebInfo MinSizeRel."
+        FORCE)
+endif(NOT CMAKE_BUILD_TYPE)
+
 # find files
 file(GLOB_RECURSE source_files ${SRC}/*)
 

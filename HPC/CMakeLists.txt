@@ -1,12 +1,13 @@
 cmake_minimum_required(VERSION 2.6)
 
 # project name
-set(PROJECT_NAME GPGPU)
+set(PROJECT_NAME HPC)
 project(${PROJECT_NAME})
 
 # bin and src dir
 set(BIN ${PROJECT_SOURCE_DIR}/bin)
 set(SRC ${PROJECT_SOURCE_DIR}/src)
+set(COM ${PROJECT_SOURCE_DIR}/../Common/src)
 
 # output dir under ./bin
 set(EXECUTABLE_OUTPUT_PATH ${BIN})
@@ -31,12 +32,14 @@ set(CMAKE_CXX_LINK_FLAGS ${CMAKE_CXX_LINK_FLAGS} ${MPI_LINK_FLAGS})
 include_directories(
     ${SRC}
     ${MPI_INCLUDE_PATH}
+    ${common_files}
 )
 
 # libs
 target_link_libraries(
     ${PROJECT_NAME}
     ${MPI_LIBRARIES}
+    ${COM}
 )
 
 # command run

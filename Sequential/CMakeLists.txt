@@ -4,11 +4,13 @@ cmake_minimum_required(VERSION 2.6)
 set(PROJECT_NAME Sequential)
 project(${PROJECT_NAME})
 
-# bin,src and common dir
+# bin,src,common and include dir
 set(BIN ${PROJECT_SOURCE_DIR}/bin)
 set(SRC ${PROJECT_SOURCE_DIR}/src)
 set(COM ${PROJECT_SOURCE_DIR}/../Common/src)
+set(INC ${PROJECT_SOURCE_DIR}/../Common/include)
 
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wno-reorder -Wno-unused-parameter")
 
 # output dir under ./bin
 set(EXECUTABLE_OUTPUT_PATH ${BIN})
@@ -31,6 +33,7 @@ add_executable(
 include_directories(
     ${SRC}
     ${COM}
+    ${INC}
 )
 
 

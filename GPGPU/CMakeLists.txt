@@ -4,10 +4,11 @@ cmake_minimum_required(VERSION 2.6)
 set(PROJECT_NAME GPGPU)
 project(${PROJECT_NAME})
 
-# bin and src dir
+# bin,src,common and include dir
 set(BIN ${PROJECT_SOURCE_DIR}/bin)
 set(SRC ${PROJECT_SOURCE_DIR}/src)
 set(COM ${PROJECT_SOURCE_DIR}/../Common/src)
+set(INC ${PROJECT_SOURCE_DIR}/../Common/include)
 
 # executable under ./bin
 set(EXECUTABLE_OUTPUT_PATH ${BIN})
@@ -28,6 +29,7 @@ cuda_add_executable(
     ${PROJECT_NAME}
     ${source_files}
     ${COM}
+    ${INC}
 )
 
 # include

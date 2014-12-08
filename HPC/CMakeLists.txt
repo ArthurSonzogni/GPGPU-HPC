@@ -4,10 +4,11 @@ cmake_minimum_required(VERSION 2.6)
 set(PROJECT_NAME HPC)
 project(${PROJECT_NAME})
 
-# bin and src dir
+# bin,src,common and include dir
 set(BIN ${PROJECT_SOURCE_DIR}/bin)
 set(SRC ${PROJECT_SOURCE_DIR}/src)
 set(COM ${PROJECT_SOURCE_DIR}/../Common/src)
+set(INC ${PROJECT_SOURCE_DIR}/../Common/include)
 
 # output dir under ./bin
 set(EXECUTABLE_OUTPUT_PATH ${BIN})
@@ -26,6 +27,7 @@ add_executable(
 
 # add OpenMPI flags
 set(CMAKE_CXX_COMPILE_FLAGS ${CMAKE_CXX_COMPILE_FLAGS} ${MPI_COMPILE_FLAGS})
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wno-reorder -Wno-unused-parameter")
 set(CMAKE_CXX_LINK_FLAGS ${CMAKE_CXX_LINK_FLAGS} ${MPI_LINK_FLAGS})
 
 # include
@@ -40,6 +42,7 @@ target_link_libraries(
     ${PROJECT_NAME}
     ${MPI_LIBRARIES}
     ${COM}
+    ${INC}
 )
 
 # command run

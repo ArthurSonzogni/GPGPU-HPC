@@ -1,5 +1,6 @@
 #include "CommandArguments.hpp"
 #include <iostream>
+#include <glm.hpp>
 
 int main(int argc, const char *argv[])
 {

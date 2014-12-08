@@ -37,7 +37,8 @@ int main(int argc, char* argv[])
             ss << "Proc :" << my_rank;
             string s = ss.str();
             dest = (my_rank + 1);
-            MPI_Send(s.c_str(), s.size()+1, MPI_CHAR, dest, tag, MPI_COMM_WORLD);
+            std::string message = s.c_str();
+            MPI_Send((void*)(s.c_str()), s.size()+1, MPI_CHAR, dest, tag, MPI_COMM_WORLD);
             state = false;
             break;
         }

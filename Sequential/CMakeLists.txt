@@ -36,6 +36,12 @@ include_directories(
     ${INC}
 )
 
+# link
+target_link_libraries(
+    ${PROJECT_NAME}
+    ${COM}
+)
+
 
 # command run
 add_custom_target(run

@@ -2,6 +2,8 @@
 #include <cstdlib>
 #include <iostream>
 #include "ProgressBar.hpp"
+#include <fstream>
+#include <sstream>
 
 double randDouble()
 {
@@ -41,6 +43,11 @@ void Simulator::run()
     {
         oneStep();
         progressBar.update(i/float(step));
+        
+        // print the result
+        std::stringstream filename;
+        filename << "./output/boids_" << i << ".xyz";
+        save(filename.str()); 
     }
 }
 
@@ -49,7 +56,7 @@ void Simulator::oneStep()
     // compute the speedIncrement
     for(int i = 0; i < agent; ++i)
     {
-        glm::vec3 speedInc;
+        glm::vec3 speedInc(0.0);
         for(int j = 0; j < agent; ++j)
         {
             glm::vec3 direction = position[j] - position[i];
@@ -60,13 +67,19 @@ void Simulator::oneStep()
             if (dist < ra ) speedInc += speed[j]  * wa;
             if (dist < rc ) speedInc += direction * wc;
         }
-        speedIncrement[i] = speedInc;
+        speedIncrement[i] = speedInc * 0.01f;
     }
 
     // sum the speedIncrement to the speed
     for(int i = 0; i < agent; ++i)
     {
         speed[i] += speedIncrement[i];
+
+        // limit the speed;
+        const float maxSpeed = 0.3;
+        float s = glm::length(speed[i]);
+        if (s>maxSpeed)
+            speed[i] *= maxSpeed/s;
     }
 
     // sum the speed to the position (Euler intégration)
@@ -74,4 +87,21 @@ void Simulator::oneStep()
     {
         position[i] += speed[i];
     }
+}
+
+void Simulator::save(const std::string& filename)
+{
+    std::ofstream file;
+    file.open(filename.c_str());
+
+    for(int i = 0; i < agent; ++i)
+    {
+        file
+            << position[i].x << " "
+            << position[i].y << " "
+            << position[i].z
+            << std::endl;
+    }
+
+    file.close();
 }

@@ -3,6 +3,7 @@
 
 #include "glm.hpp"
 #include <vector>
+#include <string>
 
 class Simulator
 {
@@ -26,6 +27,7 @@ class Simulator
         float wc,wa,ws,rc,ra,rs;
 
         void oneStep();
+        void save(const std::string& filename);
 };
 
 #endif /* end of include guard: SIMULATOR_N4GERFZE */

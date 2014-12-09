@@ -1,6 +1,7 @@
 #include "Simulator.hpp"
 #include <cstdlib>
 #include <iostream>
+#include "ProgressBar.hpp"
 
 double randDouble()
 {
@@ -35,10 +36,11 @@ void Simulator::init()
 
 void Simulator::run()
 {
+    ProgressBar progressBar;
     for(int i = 0; i < step; ++i)
     {
         oneStep();
-        std::cout << i << "/" << step << std::endl;
+        progressBar.update(i/float(step));
     }
 }
 

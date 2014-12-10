@@ -8,7 +8,7 @@
 glm::vec3 Simulator::bounds = glm::vec3(1.f,1.f,1.f);
 
 double randDouble()
-{
+{ 
 	return rand() / double(RAND_MAX);
 }
 

@@ -86,6 +86,12 @@ void Simulator::oneStep()
 		speedC = countC>0?speedC/countC:speedC;
 		speedA = countA>0?speedA/countA:speedA;
 		speedS = countS>0?speedS/countS:speedS;
+
+        {
+            float l = glm::length(position[i]);
+            speedIncrement[i] += 0.01f*position[i]/(l*l);
+        }
+
 		speedIncrement[i] = speedC+speedA+speedS;
 	}
 

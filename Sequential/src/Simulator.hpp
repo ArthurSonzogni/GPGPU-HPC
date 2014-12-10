@@ -17,6 +17,7 @@ class Simulator
         void run();
 
     private:
+		static glm::vec3 bounds;
         std::vector<glm::vec3> position;
         std::vector<glm::vec3> speed;
         std::vector<glm::vec3> speedIncrement;

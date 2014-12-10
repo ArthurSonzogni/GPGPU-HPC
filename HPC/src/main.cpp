@@ -1,58 +1,40 @@
-#include <mpi.h>
+#include "CommandArguments.hpp"
 #include <iostream>
-#include <sstream>
+#include "Simulator.hpp"
 
-using namespace std;
-
-
-int main(int argc, char* argv[])
+int main(int argc, const char *argv[])
 {
-    int my_rank; /* rang du processus */
-    int p; /* nombre de processus */
-    int source; /* rang de l’emetteur */
-    int dest; /* rang du recepteur */
+    CommandArguments arguments;
 
-    int tag = 0; /* etiquette du message */
-    char message[100];
-    MPI_Status status;
+    // set arguments defaults values
+    arguments.setDefault("agents", "640");
+    arguments.setDefault("steps", "500");
+    arguments.setDefault("wc", "12");
+    arguments.setDefault("wa", "15");
+    arguments.setDefault("ws", "35");
+    arguments.setDefault("rc", "0.11");
+    arguments.setDefault("ra", "0.15");
+    arguments.setDefault("rs", "0.01");
 
-    /* Initialisation */
-    MPI_Init(&argc, &argv);
-    MPI_Comm_rank(MPI_COMM_WORLD, &my_rank);
-    MPI_Comm_size(MPI_COMM_WORLD, &p);
+    // parse the argument
+    arguments.parse(argc,argv);
 
-    bool state = (my_rank == 0);
-    int value = 0;
+    // print the arguments
+    std::cout << "arguments : " << std::endl;
+    std::cout << arguments.print() << std::endl;
 
-    while(true)
-    {
-        if (state)
-        {
-            /* Creation du message */
-            char proc_name[100];
-            int proc_length;
-            MPI_Get_processor_name((char*)&proc_name,&proc_length);
-            proc_name[proc_length+1] = (char)0;
-            stringstream ss;
-            ss << "Proc :" << my_rank;
-            string s = ss.str();
-            dest = (my_rank + 1);
-            std::string message = s.c_str();
-            MPI_Send((void*)(s.c_str()), s.size()+1, MPI_CHAR, dest, tag, MPI_COMM_WORLD);
-            state = false;
-            break;
-        }
-        else
-        {
-            MPI_Recv(message, 100, MPI_CHAR, MPI_ANY_SOURCE, tag, MPI_COMM_WORLD, &status);
-            cout << message << "my rank = " << my_rank << endl;
-            if (my_rank == 3)
-                break;
-            else
-                state = true;
-        }
-    }
-    /* Desactivation */
-    MPI_Finalize();
+    // extract the arguments
+    int agents = arguments.get<int>("agents");
+    int steps  = arguments.get<int>("steps");
+    double wc =  arguments.get<double>("wc");
+    double wa =  arguments.get<double>("wa");
+    double ws =  arguments.get<double>("ws");
+    double rc =  arguments.get<double>("rc");
+    double ra =  arguments.get<double>("ra");
+    double rs =  arguments.get<double>("rs");
+
+    Simulator simulator(agents,steps,wc,wa,ws,rc,ra,rs);
+    simulator.run();
+    
     return 0;
 }

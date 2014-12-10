@@ -27,8 +27,6 @@ set(EXECUTABLE_OUTPUT_PATH ${BIN})
 file(GLOB_RECURSE common_files ${COM}/*)
 file(GLOB_RECURSE source_files ${SRC}/*)
 
-# Finding libs
-find_package(MPI REQUIRED)
 
 add_executable(
     ${PROJECT_NAME}

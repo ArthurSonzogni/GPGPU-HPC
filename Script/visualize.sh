@@ -14,9 +14,9 @@ cd $here
 
 # compile and run the program
 cd ../$program
-cmake .
-mkdir -p output
-make run
+#cmake .
+#mkdir -p output
+#make run
 
 # launch gnuplot
 cd $here

@@ -23,7 +23,7 @@ endif(NOT CMAKE_BUILD_TYPE)
 
 # find files
 file(GLOB_RECURSE source_files ${SRC}/*)
-
+file(GLOB_RECURSE common_files ${COM}/*)
 
 # Finding libs
 find_package(MPI REQUIRED)
@@ -31,7 +31,10 @@ find_package(MPI REQUIRED)
 add_executable(
     ${PROJECT_NAME}
     ${source_files}
+    ${common_files}
 )
+
+
 
 # add OpenMPI flags
 set(CMAKE_CXX_COMPILE_FLAGS ${CMAKE_CXX_COMPILE_FLAGS} ${MPI_COMPILE_FLAGS})
@@ -42,15 +45,14 @@ set(CMAKE_CXX_LINK_FLAGS ${CMAKE_CXX_LINK_FLAGS} ${MPI_LINK_FLAGS})
 include_directories(
     ${SRC}
     ${MPI_INCLUDE_PATH}
-    ${common_files}
     ${INC}
+    ${COM}
 )
 
 # libs
 target_link_libraries(
     ${PROJECT_NAME}
     ${MPI_LIBRARIES}
-    ${COM}
 )
 
 # command run

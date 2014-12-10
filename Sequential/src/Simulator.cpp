@@ -6,8 +6,7 @@
 #include <sstream>
 
 double randDouble()
-{
-    return rand() / double(RAND_MAX);
+{ return rand() / double(RAND_MAX);
 }
 
 Simulator::Simulator(
@@ -66,8 +65,10 @@ void Simulator::oneStep()
             if (dist < rs ) speedInc -= direction * ws;
             if (dist < ra ) speedInc += speed[j]  * wa;
             if (dist < rc ) speedInc += direction * wc;
+
+            //speedInc -= position[i] * 0.0000001f;
         }
-        speedIncrement[i] = speedInc * 0.01f;
+        speedIncrement[i] = speedInc * 0.1f;
     }
 
     // sum the speedIncrement to the speed
@@ -76,7 +77,7 @@ void Simulator::oneStep()
         speed[i] += speedIncrement[i];
 
         // limit the speed;
-        const float maxSpeed = 0.3;
+        const float maxSpeed = 100.f/500.f;
         float s = glm::length(speed[i]);
         if (s>maxSpeed)
             speed[i] *= maxSpeed/s;

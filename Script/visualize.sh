@@ -14,9 +14,9 @@ cd $here
 
 # compile and run the program
 cd ../$program
-#cmake .
-#mkdir -p output
-#make run
+cmake .
+mkdir -p output
+make run
 
 # launch gnuplot
 cd $here
@@ -25,7 +25,6 @@ outputFile="$here/output/$program".gif
 dataFolder="../$program/output/"
 
 gnuplot -e "outputFile=\"$outputFile\"" -e "dataFolder=\"$dataFolder\"" visualize.gp
-
 
 # visualize the produced gif
 eog $outputFile

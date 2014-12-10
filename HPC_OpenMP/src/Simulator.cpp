@@ -28,9 +28,9 @@ void Simulator::init()
     position.reserve(agent);
     speed.reserve(agent);
     speedIncrement.reserve(agent);
-#pragma omp parallel
+    #pragma omp parallel
 	{
-#pragma omp for
+        #pragma omp for
 		for(int i = 0; i < agent; ++i)
 		{
 			position.push_back(glm::vec3(randDouble(),randDouble(),randDouble()));
@@ -57,10 +57,10 @@ void Simulator::run()
 
 void Simulator::oneStep()
 {
-#pragma omp parallel
+    #pragma omp parallel
 	{
 		// compute the speedIncrement
-#pragma omp for
+        #pragma omp for
 		for(int i = 0; i < agent; ++i)
 		{
 			glm::vec3 speedInc(0.0);
@@ -78,7 +78,7 @@ void Simulator::oneStep()
 		}
 
 		// sum the speedIncrement to the speed
-#pragma omp for
+        #pragma omp for
 		for(int i = 0; i < agent; ++i)
 		{
 			speed[i] += speedIncrement[i];
@@ -91,10 +91,11 @@ void Simulator::oneStep()
 		}
 
 		// sum the speed to the position (Euler intégration)
-#pragma omp for
+        #pragma omp for
 		for(int i = 0; i < agent; ++i)
 		{
 			position[i] += speed[i];
+            position[i] = glm::fract(position[i]);
 		}
 	}
 }

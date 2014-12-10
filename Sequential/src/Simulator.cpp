@@ -88,7 +88,8 @@ void Simulator::oneStep()
 	for(int i = 0; i < agent; ++i)
 	{
 		position[i] += speed[i];
-		position[i] = glm::modf(position[i], bounds);
+//		position[i] = glm::modf(position[i], bounds);
+		position[i] = glm::fract(position[i]);
 	}
 }
 

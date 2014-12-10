@@ -89,7 +89,7 @@ void Simulator::oneStep()
 
         {
             float l = glm::length(position[i]);
-            speedIncrement[i] += 0.01f*position[i]/(l*l);
+            speedIncrement[i] += 0.1f*position[i]/(l*l);
         }
 
 		speedIncrement[i] = speedC+speedA+speedS;

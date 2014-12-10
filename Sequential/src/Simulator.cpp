@@ -78,7 +78,7 @@ void Simulator::oneStep()
 		speed[i] += speedIncrement[i];
 
 		// limit the speed;
-		const float maxSpeed = 0.3;
+		const float maxSpeed = 0.2;
 		float s = glm::length(speed[i]);
 		if (s>maxSpeed)
 			speed[i] *= maxSpeed/s;

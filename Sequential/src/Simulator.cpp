@@ -58,18 +58,35 @@ void Simulator::oneStep()
 	// compute the speedIncrement
 	for(int i = 0; i < agent; ++i)
 	{
-		glm::vec3 speedInc(0.0);
+		glm::vec3 speedA(0.f),speedS(0.f),speedC(0.f);
+		float countA=0,countS=0,countC=0;
 		for(int j = 0; j < agent; ++j)
 		{
+			if(i == j) continue;
 			glm::vec3 direction = position[j] - position[i];
 			float dist = glm::length(direction);
 
 			// separation/alignment/cohesion
-			if (dist < rs ) speedInc -= direction * ws;
-			if (dist < ra ) speedInc += speed[j]  * wa;
-			if (dist < rc ) speedInc += direction * wc;
+			if (dist < rs )
+			{
+				speedS -= direction * ws;
+				countS++;
+			}
+			if (dist < ra )
+			{
+				speedA += speed[j]  * wa;
+				countA++;
+			}
+			if (dist < rc )
+			{
+				speedC += direction * wc;
+				countC++;
+			}
 		}
-		speedIncrement[i] = speedInc * 0.01f;
+		speedC = countC>0?speedC/countC:speedC;
+		speedA = countA>0?speedA/countA:speedA;
+		speedS = countS>0?speedS/countS:speedS;
+		speedIncrement[i] = speedC+speedA+speedS;
 	}
 
 	// sum the speedIncrement to the speed

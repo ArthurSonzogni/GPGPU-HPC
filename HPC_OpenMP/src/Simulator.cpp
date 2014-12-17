@@ -25,17 +25,17 @@ Simulator::Simulator(
 
 void Simulator::init()
 {
-    position.reserve(agent);
-    speed.reserve(agent);
-    speedIncrement.reserve(agent);
+    position.resize(agent);
+    speed.resize(agent);
+    speedIncrement.resize(agent);
     #pragma omp parallel
 	{
         #pragma omp for
 		for(int i = 0; i < agent; ++i)
 		{
-			position.push_back(glm::vec3(randDouble(),randDouble(),randDouble()));
-			speed.push_back(glm::vec3(0.0,0.0,0.0));
-			speedIncrement.push_back(glm::vec3(0.0,0.0,0.0));
+			position[i] = glm::vec3(randDouble(),randDouble(),randDouble());
+			speed[i] = glm::vec3(0.0,0.0,0.0);
+			speedIncrement[i] = glm::vec3(0.0,0.0,0.0);
 		}
 	}
 }

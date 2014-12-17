@@ -51,6 +51,7 @@ void Simulator::init()
 	gpuCheck(cudaMalloc((void**)&speedIncrement_cuda,position.size()*sizeof(float)));
 
 	// copy the position to cuda
+	gpuCheck(cudaMemcpy(position_cuda, &(position[0]), 3*agent*sizeof(float), cudaMemcpyHostToDevice));
 
 	// init speed to zero
 	dim3 gridSize(1,1,1);
@@ -67,7 +68,8 @@ void Simulator::run()
 	for(int i = 0; i < step; ++i)
 	{
 		oneStep();
-		//		progressBar.update(i/float(step));
+		//progressBar.update(i/float(step));
+		gpuCheck(cudaMemcpy(&(position[0]), position_cuda, 3*agent*sizeof(float), cudaMemcpyDeviceToHost));
 
 		// print the result
 		std::stringstream filename;
@@ -78,6 +80,14 @@ void Simulator::run()
 
 void Simulator::oneStep()
 {
+	dim3 gridSize(1,1,1);
+	dim3 blockSize(32,32,1);
+
+	gpuCheck(cudaGetLastError());
+	computeSpeedIncrement<<<blockSize,gridSize>>>(position_cuda, speed_cuda, speedIncrement_cuda, agent, rs,ra,rc, ws,wa,wc);
+	gpuCheck(cudaGetLastError());
+	updateSpeedPosition<<<blockSize,gridSize>>>(position_cuda, speed_cuda, speedIncrement_cuda, 3*agent);
+	gpuCheck(cudaGetLastError());
 	//	// compute the speedIncrement
 	//	for(int i = 0; i < agent; ++i)
 	//	{

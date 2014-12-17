@@ -1,11 +1,20 @@
-#include "Simulator.cuh"
+#include "Simulator.hpp"
 #include <cstdlib>
 #include <iostream>
-#include "ProgressBar.hpp"
+//#include "ProgressBar.hpp"
 #include <fstream>
 #include <sstream>
+#include "Kernels.hpp"
 
-glm::vec3 Simulator::bounds = glm::vec3(1.f,1.f,1.f);
+#define gpuCheck(ans) { gpuAssert((ans), __FILE__, __LINE__); }
+inline void gpuAssert(cudaError_t code, const char *file, int line, bool abort=true)
+{
+	if (code != cudaSuccess) 
+	{
+		fprintf(stderr,"GPUassert: %s %s %d\n", cudaGetErrorString(code), file, line);
+		if (abort) exit(code);
+	}
+}
 
 double randDouble()
 { 
@@ -27,7 +36,7 @@ Simulator::Simulator(
 
 void Simulator::init()
 {
-    // initialization initial position
+	// initialization initial position
 	position.reserve(3*agent);
 	for(int i = 0; i < agent; ++i)
 	{
@@ -36,25 +45,29 @@ void Simulator::init()
 		position.push_back(randDouble()); // z
 	}
 
-    // create the cuda data
-    cudaMalloc((void**)&position_cuda,position.size()*sizeof(float));
-    cudaMalloc((void**)&speed_cuda,position.size()*sizeof(float));
-    cudaMalloc((void**)&speedIncrement_cuda,position.size()*sizeof(float));
+	// create the cuda data
+	gpuCheck(cudaMalloc((void**)&position_cuda,position.size()*sizeof(float)));
+	gpuCheck(cudaMalloc((void**)&speed_cuda,position.size()*sizeof(float)));
+	gpuCheck(cudaMalloc((void**)&speedIncrement_cuda,position.size()*sizeof(float)));
 
-    // copy the position to cuda
-    
-    // init speed to zero
+	// copy the position to cuda
 
+	// init speed to zero
+	dim3 gridSize(1,1,1);
+	dim3 blockSize(32,32,1);
+	// The kernel doesn't seem to be working
+	initToZero<<<blockSize,gridSize>>>(speed_cuda, 3*agent);
+	gpuCheck(cudaGetLastError());
 }
 
 
 void Simulator::run()
 {
-	ProgressBar progressBar;
+	//	ProgressBar progressBar;
 	for(int i = 0; i < step; ++i)
 	{
 		oneStep();
-		progressBar.update(i/float(step));
+		//		progressBar.update(i/float(step));
 
 		// print the result
 		std::stringstream filename;
@@ -65,59 +78,59 @@ void Simulator::run()
 
 void Simulator::oneStep()
 {
-	// compute the speedIncrement
-	for(int i = 0; i < agent; ++i)
-	{
-		glm::vec3 speedA(0.f),speedS(0.f),speedC(0.f);
-		float countA=0,countS=0,countC=0;
-		for(int j = 0; j < agent; ++j)
-		{
-			if(i == j) continue;
-			glm::vec3 direction = position[j] - position[i];
-			float dist = glm::length(direction);
-
-			// separation/alignment/cohesion
-			if (dist < rs )
-			{
-				speedS -= direction * ws;
-				countS++;
-			}
-			if (dist < ra )
-			{
-				speedA += speed[j]  * wa;
-				countA++;
-			}
-			if (dist < rc )
-			{
-				speedC += direction * wc;
-				countC++;
-			}
-		}
-		speedC = countC>0?speedC/countC:speedC;
-		speedA = countA>0?speedA/countA:speedA;
-		speedS = countS>0?speedS/countS:speedS;
-		speedIncrement[i] = speedC+speedA+speedS;
-	}
-
-	// sum the speedIncrement to the speed
-	for(int i = 0; i < agent; ++i)
-	{
-		speed[i] += speedIncrement[i];
-
-		// limit the speed;
-		const float maxSpeed = 0.3;
-		float s = glm::length(speed[i]);
-		if (s>maxSpeed)
-			speed[i] *= maxSpeed/s;
-	}
-
-	// sum the speed to the position (Euler intégration)
-	for(int i = 0; i < agent; ++i)
-	{
-		position[i] += speed[i];
-//		position[i] = glm::modf(position[i], bounds);
-		position[i] = glm::fract(position[i]);
-	}
+	//	// compute the speedIncrement
+	//	for(int i = 0; i < agent; ++i)
+	//	{
+	//		glm::vec3 speedA(0.f),speedS(0.f),speedC(0.f);
+	//		float countA=0,countS=0,countC=0;
+	//		for(int j = 0; j < agent; ++j)
+	//		{
+	//			if(i == j) continue;
+	//			glm::vec3 direction = position[j] - position[i];
+	//			float dist = glm::length(direction);
+	//
+	//			// separation/alignment/cohesion
+	//			if (dist < rs )
+	//			{
+	//				speedS -= direction * ws;
+	//				countS++;
+	//			}
+	//			if (dist < ra )
+	//			{
+	//				speedA += speed[j]  * wa;
+	//				countA++;
+	//			}
+	//			if (dist < rc )
+	//			{
+	//				speedC += direction * wc;
+	//				countC++;
+	//			}
+	//		}
+	//		speedC = countC>0?speedC/countC:speedC;
+	//		speedA = countA>0?speedA/countA:speedA;
+	//		speedS = countS>0?speedS/countS:speedS;
+	//		speedIncrement[i] = speedC+speedA+speedS;
+	//	}
+	//
+	//	// sum the speedIncrement to the speed
+	//	for(int i = 0; i < agent; ++i)
+	//	{
+	//		speed[i] += speedIncrement[i];
+	//
+	//		// limit the speed;
+	//		const float maxSpeed = 0.3;
+	//		float s = glm::length(speed[i]);
+	//		if (s>maxSpeed)
+	//			speed[i] *= maxSpeed/s;
+	//	}
+	//
+	//	// sum the speed to the position (Euler intégration)
+	//	for(int i = 0; i < agent; ++i)
+	//	{
+	//		position[i] += speed[i];
+	////		position[i] = glm::modf(position[i], bounds);
+	//		position[i] = glm::fract(position[i]);
+	//	}
 }
 
 void Simulator::save(const std::string& filename)
@@ -128,9 +141,9 @@ void Simulator::save(const std::string& filename)
 	for(int i = 0; i < agent; ++i)
 	{
 		file
-			<< position[i].x << " "
-			<< position[i].y << " "
-			<< position[i].z
+			<< position[3*i] << " "
+			<< position[3*i+1] << " "
+			<< position[3*i+2]
 			<< std::endl;
 	}
 

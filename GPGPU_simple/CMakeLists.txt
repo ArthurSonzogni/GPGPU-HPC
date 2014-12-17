@@ -31,7 +31,7 @@ find_package(CUDA REQUIRED)
 
 # set some options
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wno-unused-parameter")
-set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} -O3 -gencode arch=compute_12,code=sm_12 -ccbin g++")
+set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} -O3 -ccbin g++")
 
 
 cuda_add_executable(

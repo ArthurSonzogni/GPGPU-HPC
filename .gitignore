@@ -1,0 +1,9 @@
+.*.sw*
+CMakeCache.txt
+CMakeFiles
+cmake_install.cmake
+bin
+build
+Makefile
+*.back
+output

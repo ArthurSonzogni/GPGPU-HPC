@@ -37,6 +37,8 @@ class Simulator
 
         void oneStep();
         void save(const std::string& filename);
+
+        void computeGroupDimension(int i, int& offset, int& size);
 };
 
 #endif /* end of include guard: SIMULATOR_N4GERFZE */

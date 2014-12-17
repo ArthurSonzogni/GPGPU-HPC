@@ -12,6 +12,22 @@ double randDouble()
     return rand() / double(RAND_MAX);
 }
 
+void Simulator::computeGroupDimension(int i, int& offset, int& size)
+{
+    int min_mpi_size = agent/mpi_size;
+    int remainder_mpi_size = agent % min_mpi_size;
+    if (i < remainder_mpi_size)
+    {
+        offset = i * (min_mpi_size + 1);
+        size = min_mpi_size + 1;
+    }
+    else
+    {
+        offset = remainder_mpi_size * (min_mpi_size + 1) + (i - remainder_mpi_size) * min_mpi_size;
+        size = min_mpi_size;
+    }
+}
+
 Simulator::Simulator(
     int mpi_rank,
     int mpi_size,
@@ -25,13 +41,14 @@ Simulator::Simulator(
     wc(wc),wa(wa),ws(ws),
     rc(rc),ra(ra),rs(rs)
 {
+    // compute the mpi_subsize
+    computeGroupDimension(mpi_rank, mpi_offset, mpi_subsize);
     init();
 }
 
 
 void Simulator::init()
 {
-    std::cout << "coucou je suis :" << mpi_rank << "/" << mpi_size << std::endl;
 
     position.resize(agent);
     speed.resize(agent);
@@ -56,7 +73,7 @@ void Simulator::run()
     for(int i = 0; i < step; ++i)
     {
         oneStep();
-        progressBar.update(i/float(step));
+        if (mpi_rank == 0)  progressBar.update(i/float(step));
         
         // print the result
         std::stringstream filename;
@@ -68,8 +85,9 @@ void Simulator::run()
 void Simulator::oneStep()
 {
     // compute the speedIncrement
-    for(int i = 0; i < agent; ++i)
+    for(int i = mpi_offset; i < mpi_offset + mpi_subsize; ++i)
     {
+        // compute speedInc
         glm::vec3 speedInc(0.0);
         for(int j = 0; j < agent; ++j)
         {
@@ -82,11 +100,8 @@ void Simulator::oneStep()
             if (dist < rc ) speedInc += direction * wc;
         }
         speedIncrement[i] = speedInc * 0.01f;
-    }
 
-    // sum the speedIncrement to the speed
-    for(int i = 0; i < agent; ++i)
-    {
+        // sum the speedIncrement to the speed
         speed[i] += speedIncrement[i];
 
         // limit the speed;
@@ -94,12 +109,19 @@ void Simulator::oneStep()
         float s = glm::length(speed[i]);
         if (s>maxSpeed)
             speed[i] *= maxSpeed/s;
+
+        // sum the speed to the position (Euler intégration)
+        position[i] += speed[i];
+		position[i] = glm::fract(position[i]);
     }
 
-    // sum the speed to the position (Euler intégration)
-    for(int i = 0; i < agent; ++i)
+    // share the data
+    for(int i = 0; i < mpi_size; ++i)
     {
-        position[i] += speed[i];
+        int offset,subsize;
+        computeGroupDimension(i,offset,subsize);
+        MPI_Bcast(&position[offset],subsize*3,MPI_FLOAT,i,MPI_COMM_WORLD);
+        MPI_Bcast(&speed[offset],subsize*3,MPI_FLOAT,i,MPI_COMM_WORLD);
     }
 }
 

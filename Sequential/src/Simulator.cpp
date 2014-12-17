@@ -35,7 +35,7 @@ void Simulator::init()
         int x = randDouble();
         int y = randDouble();
         int z = randDouble();
-        position[i] = glm::vec3(randDouble(),randDouble(),randDouble());
+        position[i] = glm::vec3(x,y,z);
         speed[i] = glm::vec3(0.0,0.0,0.0);
         speedIncrement[i] = glm::vec3(0.0,0.0,0.0);
     }

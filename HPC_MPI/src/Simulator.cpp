@@ -54,13 +54,15 @@ void Simulator::init()
     speed.resize(agent);
     speedIncrement.resize(agent);
 
-    if (mpi_rank == 0)
-    {
-        for(int i = 0; i < agent; ++i)
-        {
-            position[i] = glm::vec3(randDouble(),randDouble(),randDouble());
-        }
-    }
+	for(int i = 0; i < agent; ++i)
+	{
+		if (mpi_rank == 0)
+		{
+			position[i] = glm::vec3(randDouble(),randDouble(),randDouble());
+		}
+		speed[i] = glm::vec3(0.0);
+		speedIncrement[i] = glm::vec3(0.0);
+	}
 
     // share the data
     MPI_Bcast(&position[0],position.size()*3,MPI_FLOAT,0,MPI_COMM_WORLD);

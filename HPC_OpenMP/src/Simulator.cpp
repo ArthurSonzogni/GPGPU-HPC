@@ -33,7 +33,7 @@ void Simulator::init()
         int x = randDouble();
         int y = randDouble();
         int z = randDouble();
-        position[i] = glm::vec3(randDouble(),randDouble(),randDouble());
+        position[i] = glm::vec3(x,y,z);
         speed[i] = glm::vec3(0.0,0.0,0.0);
         speedIncrement[i] = glm::vec3(0.0,0.0,0.0);
     }
@@ -78,11 +78,6 @@ void Simulator::oneStep()
             speedC = countC>0?speedC/countC:speedC;
             speedA = countA>0?speedA/countA:speedA;
             speedS = countS>0?speedS/countS:speedS;
-
-            {
-                float l = glm::length(position[i]);
-                speedIncrement[i] += 0.1f*position[i]/(l*l);
-            }
 
             speedIncrement[i] = speedC+speedA+speedS;
         }

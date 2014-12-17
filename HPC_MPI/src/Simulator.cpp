@@ -54,14 +54,15 @@ void Simulator::init()
     speed.resize(agent);
     speedIncrement.resize(agent);
 
-	for(int i = 0; i < agent; ++i)
+	if (mpi_rank == 0)
 	{
-		if (mpi_rank == 0)
+        for(int i = 0; i < agent; ++i)
 		{
-			position[i] = glm::vec3(randDouble(),randDouble(),randDouble());
+            int x = randDouble();
+            int y = randDouble();
+            int z = randDouble();
+            position[i] = glm::vec3(x,y,z);
 		}
-		speed[i] = glm::vec3(0.0);
-		speedIncrement[i] = glm::vec3(0.0);
 	}
 
     // share the data
@@ -89,36 +90,45 @@ void Simulator::oneStep()
     // compute the speedIncrement
     for(int i = mpi_offset; i < mpi_offset + mpi_subsize; ++i)
     {
-        // compute speedInc
-        glm::vec3 speedInc(0.0);
-        for(int j = 0; j < agent; ++j)
-        {
-            glm::vec3 direction = position[j] - position[i];
-            float dist = glm::length(direction);
+		glm::vec3 speedA(0.f),speedS(0.f),speedC(0.f);
+		float countA=0,countS=0,countC=0;
+		for(int j = 0; j < agent; ++j)
+		{
+			if(i == j) continue;
+			glm::vec3 direction = position[j] - position[i];
+			float dist = glm::length(direction);
 
-            // separation/alignment/cohesion
-            if (dist < rs ) speedInc -= direction * ws;
-            if (dist < ra ) speedInc += speed[j]  * wa;
-            if (dist < rc ) speedInc += direction * wc;
-        }
-        speedIncrement[i] = speedInc * 0.01f;
+			// separation/alignment/cohesion
+			if (dist < rs ) { speedS -= direction * ws; countS++; }
+			if (dist < ra ) { speedA += speed[j]  * wa; countA++; }
+			if (dist < rc ) { speedC += direction * wc; countC++; }
+		}
+		speedC = countC>0?speedC/countC:speedC;
+		speedA = countA>0?speedA/countA:speedA;
+		speedS = countS>0?speedS/countS:speedS;
 
-        // sum the speedIncrement to the speed
-        speed[i] += speedIncrement[i];
 
-        // limit the speed;
-        const float maxSpeed = 0.3;
-        float s = glm::length(speed[i]);
-        if (s>maxSpeed)
-            speed[i] *= maxSpeed/s;
+		speedIncrement[i] = speedC+speedA+speedS;
+    }
 
-        // sum the speed to the position (Euler intégration)
-        position[i] += speed[i];
+    // apply the speed increment
+    for(int i = mpi_offset; i < mpi_offset + mpi_subsize; ++i)
+    {
+
+		speed[i] += speedIncrement[i];
+
+		// limit the speed;
+		const float maxSpeed = 0.2;
+		float s = glm::length(speed[i]);
+		if (s>maxSpeed)
+			speed[i] *= maxSpeed/s;
+
+		position[i] += speed[i];
 		position[i] = glm::fract(position[i]);
     }
 
-    // share the data
-    for(int i = 0; i < mpi_size; ++i)
+    // share the results
+    for(int i = 0; i<mpi_size; ++i)
     {
         int offset,subsize;
         computeGroupDimension(i,offset,subsize);

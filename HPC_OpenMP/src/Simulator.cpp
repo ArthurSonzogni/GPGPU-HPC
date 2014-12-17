@@ -28,16 +28,15 @@ void Simulator::init()
     position.resize(agent);
     speed.resize(agent);
     speedIncrement.resize(agent);
-    #pragma omp parallel
-	{
-        #pragma omp for
-		for(int i = 0; i < agent; ++i)
-		{
-			position[i] = glm::vec3(randDouble(),randDouble(),randDouble());
-			speed[i] = glm::vec3(0.0,0.0,0.0);
-			speedIncrement[i] = glm::vec3(0.0,0.0,0.0);
-		}
-	}
+    for(int i = 0; i < agent; ++i)
+    {
+        int x = randDouble();
+        int y = randDouble();
+        int z = randDouble();
+        position[i] = glm::vec3(randDouble(),randDouble(),randDouble());
+        speed[i] = glm::vec3(0.0,0.0,0.0);
+        speedIncrement[i] = glm::vec3(0.0,0.0,0.0);
+    }
 }
 
 void Simulator::run()
@@ -58,46 +57,61 @@ void Simulator::run()
 void Simulator::oneStep()
 {
     #pragma omp parallel
-	{
-		// compute the speedIncrement
+    {
+        // compute the speedIncrement
         #pragma omp for
-		for(int i = 0; i < agent; ++i)
-		{
-			glm::vec3 speedInc(0.0);
-			for(int j = 0; j < agent; ++j)
-			{
-				glm::vec3 direction = position[j] - position[i];
-				float dist = glm::length(direction);
+        for(int i = 0; i < agent; ++i)
+        {
+            glm::vec3 speedA(0.f),speedS(0.f),speedC(0.f);
+            float countA=0,countS=0,countC=0;
+            for(int j = 0; j < agent; ++j)
+            {
+                if(i == j) continue;
+                glm::vec3 direction = position[j] - position[i];
+                float dist = glm::length(direction);
 
-				// separation/alignment/cohesion
-				if (dist < rs ) speedInc -= direction * ws;
-				if (dist < ra ) speedInc += speed[j]  * wa;
-				if (dist < rc ) speedInc += direction * wc;
-			}
-			speedIncrement[i] = speedInc * 0.01f;
-		}
+                // separation/alignment/cohesion
+                if (dist < rs ) { speedS -= direction * ws; countS++; }
+                if (dist < ra ) { speedA += speed[j]  * wa; countA++; }
+                if (dist < rc ) { speedC += direction * wc; countC++; }
+            }
+            speedC = countC>0?speedC/countC:speedC;
+            speedA = countA>0?speedA/countA:speedA;
+            speedS = countS>0?speedS/countS:speedS;
 
-		// sum the speedIncrement to the speed
+            {
+                float l = glm::length(position[i]);
+                speedIncrement[i] += 0.1f*position[i]/(l*l);
+            }
+
+            speedIncrement[i] = speedC+speedA+speedS;
+        }
+
+        #pragma omp barrier
+
+        // sum the speedIncrement to the speed
         #pragma omp for
-		for(int i = 0; i < agent; ++i)
-		{
-			speed[i] += speedIncrement[i];
+        for(int i = 0; i < agent; ++i)
+        {
+            speed[i] += speedIncrement[i];
 
-			// limit the speed;
-			const float maxSpeed = 0.3;
-			float s = glm::length(speed[i]);
-			if (s>maxSpeed)
-				speed[i] *= maxSpeed/s;
-		}
+            // limit the speed;
+            const float maxSpeed = 0.2;
+            float s = glm::length(speed[i]);
+            if (s>maxSpeed)
+                speed[i] *= maxSpeed/s;
+        }
 
-		// sum the speed to the position (Euler intégration)
+        #pragma omp barrier
+
+        // sum the speed to the position (Euler intégration)
         #pragma omp for
-		for(int i = 0; i < agent; ++i)
-		{
-			position[i] += speed[i];
+        for(int i = 0; i < agent; ++i)
+        {
+            position[i] += speed[i];
             position[i] = glm::fract(position[i]);
-		}
-	}
+        }
+    }
 }
 
 void Simulator::save(const std::string& filename)

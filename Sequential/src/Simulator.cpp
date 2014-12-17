@@ -27,15 +27,18 @@ Simulator::Simulator(
 
 void Simulator::init()
 {
-	position.reserve(agent);
-	speed.reserve(agent);
-	speedIncrement.reserve(agent);
-	for(int i = 0; i < agent; ++i)
-	{
-		position.push_back(glm::vec3(randDouble(),randDouble(),randDouble()));
-		speed.push_back(glm::vec3(0.0,0.0,0.0));
-		speedIncrement.push_back(glm::vec3(0.0,0.0,0.0));
-	}
+    position.resize(agent);
+    speed.resize(agent);
+    speedIncrement.resize(agent);
+    for(int i = 0; i < agent; ++i)
+    {
+        int x = randDouble();
+        int y = randDouble();
+        int z = randDouble();
+        position[i] = glm::vec3(randDouble(),randDouble(),randDouble());
+        speed[i] = glm::vec3(0.0,0.0,0.0);
+        speedIncrement[i] = glm::vec3(0.0,0.0,0.0);
+    }
 }
 
 void Simulator::run()
@@ -67,21 +70,9 @@ void Simulator::oneStep()
 			float dist = glm::length(direction);
 
 			// separation/alignment/cohesion
-			if (dist < rs )
-			{
-				speedS -= direction * ws;
-				countS++;
-			}
-			if (dist < ra )
-			{
-				speedA += speed[j]  * wa;
-				countA++;
-			}
-			if (dist < rc )
-			{
-				speedC += direction * wc;
-				countC++;
-			}
+			if (dist < rs ) { speedS -= direction * ws; countS++; }
+			if (dist < ra ) { speedA += speed[j]  * wa; countA++; }
+			if (dist < rc ) { speedC += direction * wc; countC++; }
 		}
 		speedC = countC>0?speedC/countC:speedC;
 		speedA = countA>0?speedA/countA:speedA;
@@ -111,7 +102,6 @@ void Simulator::oneStep()
 	for(int i = 0; i < agent; ++i)
 	{
 		position[i] += speed[i];
-//		position[i] = glm::modf(position[i], bounds);
 		position[i] = glm::fract(position[i]);
 	}
 }

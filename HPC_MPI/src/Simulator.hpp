@@ -13,15 +13,16 @@ class Simulator
             int mpi_size,
             int agent,
             int step,
-            float wc, float wa, float ws,
-            float rc, float ra, float rs);
+            double wc, double wa, double ws,
+            double rc, double ra, double rs,
+            bool write);
 
         void run();
 
     private:
-        std::vector<glm::vec3> position;
-        std::vector<glm::vec3> speed;
-        std::vector<glm::vec3> speedIncrement;
+        std::vector<glm::dvec3> position;
+        std::vector<glm::dvec3> speed;
+        std::vector<glm::dvec3> speedIncrement;
 
 
         int mpi_rank;
@@ -33,7 +34,8 @@ class Simulator
         void init();
 
         int agent,step;
-        float wc,wa,ws,rc,ra,rs;
+        double wc,wa,ws,rc,ra,rs;
+        bool write;
 
         void oneStep();
         void save(const std::string& filename);

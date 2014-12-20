@@ -33,13 +33,15 @@ Simulator::Simulator(
     int mpi_size,
     int agent,
     int step,
-    float wc, float wa, float ws,
-    float rc, float ra, float rs):
+    double wc, double wa, double ws,
+    double rc, double ra, double rs,
+    bool write):
     mpi_rank(mpi_rank),
     mpi_size(mpi_size),
     agent(agent),step(step),
     wc(wc),wa(wa),ws(ws),
-    rc(rc),ra(ra),rs(rs)
+    rc(rc),ra(ra),rs(rs),
+    write(write)
 {
     // compute the mpi_subsize
     computeGroupDimension(mpi_rank, mpi_offset, mpi_subsize);
@@ -58,16 +60,16 @@ void Simulator::init()
 	{
         for(int i = 0; i < agent; ++i)
 		{
-            int x = randDouble();
-            int y = randDouble();
-            int z = randDouble();
-            position[i] = glm::vec3(x,y,z);
+            double x = randDouble();
+            double y = randDouble();
+            double z = randDouble();
+            position[i] = glm::dvec3(x,y,z);
 		}
 	}
 
     // share the data
-    MPI_Bcast(&position[0],position.size()*3,MPI_FLOAT,0,MPI_COMM_WORLD);
-    MPI_Bcast(&speed[0],speed.size()*3,MPI_FLOAT,0,MPI_COMM_WORLD);
+    MPI_Bcast(&position[0],position.size()*3,MPI_DOUBLE,0,MPI_COMM_WORLD);
+    MPI_Bcast(&speed[0],speed.size()*3,MPI_DOUBLE,0,MPI_COMM_WORLD);
 }
 
 void Simulator::run()
@@ -76,7 +78,7 @@ void Simulator::run()
     for(int i = 0; i < step; ++i)
     {
         oneStep();
-        if (mpi_rank == 0)  progressBar.update(i/float(step));
+        if (mpi_rank == 0)  progressBar.update(i/double(step));
         
         // print the result
         std::stringstream filename;
@@ -90,13 +92,13 @@ void Simulator::oneStep()
     // compute the speedIncrement
     for(int i = mpi_offset; i < mpi_offset + mpi_subsize; ++i)
     {
-		glm::vec3 speedA(0.f),speedS(0.f),speedC(0.f);
-		float countA=0,countS=0,countC=0;
+		glm::dvec3 speedA(0.0),speedS(0.0),speedC(0.0);
+		double countA=0,countS=0,countC=0;
 		for(int j = 0; j < agent; ++j)
 		{
 			if(i == j) continue;
-			glm::vec3 direction = position[j] - position[i];
-			float dist = glm::length(direction);
+			glm::dvec3 direction = position[j] - position[i];
+			double dist = glm::length(direction);
 
 			// separation/alignment/cohesion
 			if (dist < rs ) { speedS -= direction * ws; countS++; }
@@ -118,8 +120,8 @@ void Simulator::oneStep()
 		speed[i] += speedIncrement[i];
 
 		// limit the speed;
-		const float maxSpeed = 0.2;
-		float s = glm::length(speed[i]);
+		const double maxSpeed = 0.2;
+		double s = glm::length(speed[i]);
 		if (s>maxSpeed)
 			speed[i] *= maxSpeed/s;
 
@@ -132,8 +134,8 @@ void Simulator::oneStep()
     {
         int offset,subsize;
         computeGroupDimension(i,offset,subsize);
-        MPI_Bcast(&position[offset],subsize*3,MPI_FLOAT,i,MPI_COMM_WORLD);
-        MPI_Bcast(&speed[offset],subsize*3,MPI_FLOAT,i,MPI_COMM_WORLD);
+        MPI_Bcast(&position[offset],subsize*3,MPI_DOUBLE,i,MPI_COMM_WORLD);
+        MPI_Bcast(&speed[offset],subsize*3,MPI_DOUBLE,i,MPI_COMM_WORLD);
     }
 }
 

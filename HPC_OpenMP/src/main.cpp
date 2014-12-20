@@ -17,6 +17,7 @@ int main(int argc, const char *argv[])
     arguments.setDefault("rc", "0.11");
     arguments.setDefault("ra", "0.15");
     arguments.setDefault("rs", "0.01");
+    arguments.setDefault("write", "0");
 
     // parse the argument
     arguments.parse(argc,argv);
@@ -28,14 +29,15 @@ int main(int argc, const char *argv[])
     // extract the arguments
     int agents = arguments.get<int>("agents");
     int steps  = arguments.get<int>("steps");
-    float wc =  arguments.get<float>("wc");
-    float wa =  arguments.get<float>("wa");
-    float ws =  arguments.get<float>("ws");
-    float rc =  arguments.get<float>("rc");
-    float ra =  arguments.get<float>("ra");
-    float rs =  arguments.get<float>("rs");
+    double wc =  arguments.get<double>("wc");
+    double wa =  arguments.get<double>("wa");
+    double ws =  arguments.get<double>("ws");
+    double rc =  arguments.get<double>("rc");
+    double ra =  arguments.get<double>("ra");
+    double rs =  arguments.get<double>("rs");
+    bool write = arguments.get<bool>("write");
 
-    Simulator simulator(agents,steps,wc,wa,ws,rc,ra,rs);
+    Simulator simulator(agents,steps,wc,wa,ws,rc,ra,rs,write);
     simulator.run();
     
     return 0;

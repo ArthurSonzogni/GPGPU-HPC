@@ -55,7 +55,7 @@ target_link_libraries(
     ${MPI_LIBRARIES}
 )
 
-message(STATUS MPIEXEC_NUMPROC_FLAG = ${MPIEXEC_NUMPROC_FLAG})
+
 # command run
 add_custom_target(run
     COMMAND ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} 4 ${BIN}/${PROJECT_NAME}
@@ -63,8 +63,10 @@ add_custom_target(run
     WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
 )
 
-add_custom_target(run100
-    COMMAND ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} 100 ${BIN}/${PROJECT_NAME}
+
+# command write
+add_custom_target(write
+    COMMAND ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} 4 ${BIN}/${PROJECT_NAME} -write 1
     DEPENDS ${PROJECT_NAME}
     WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
 )

@@ -5,7 +5,7 @@
 #include <fstream>
 #include <sstream>
 
-glm::vec3 Simulator::bounds = glm::vec3(1.f,1.f,1.f);
+glm::dvec3 Simulator::bounds = glm::dvec3(1.0,1.0,1.0);
 
 double randDouble()
 { 
@@ -15,11 +15,13 @@ double randDouble()
 Simulator::Simulator(
 		int agent,
 		int step,
-		float wc, float wa, float ws,
-		float rc, float ra, float rs):
+		double wc, double wa, double ws,
+		double rc, double ra, double rs,
+        bool write):
 	agent(agent),step(step),
 	wc(wc),wa(wa),ws(ws),
-	rc(rc),ra(ra),rs(rs)
+	rc(rc),ra(ra),rs(rs),
+    write(write)
 {
 	init();
 }
@@ -32,12 +34,12 @@ void Simulator::init()
     speedIncrement.resize(agent);
     for(int i = 0; i < agent; ++i)
     {
-        int x = randDouble();
-        int y = randDouble();
-        int z = randDouble();
-        position[i] = glm::vec3(x,y,z);
-        speed[i] = glm::vec3(0.0,0.0,0.0);
-        speedIncrement[i] = glm::vec3(0.0,0.0,0.0);
+        double x = randDouble();
+        double y = randDouble();
+        double z = randDouble();
+        position[i] = glm::dvec3(x,y,z);
+        speed[i] = glm::dvec3(0.0,0.0,0.0);
+        speedIncrement[i] = glm::dvec3(0.0,0.0,0.0);
     }
 }
 
@@ -47,12 +49,12 @@ void Simulator::run()
 	for(int i = 0; i < step; ++i)
 	{
 		oneStep();
-		progressBar.update(i/float(step));
+		progressBar.update(i/double(step));
 
 		// print the result
 		std::stringstream filename;
 		filename << "./output/boids_" << i << ".xyz";
-		save(filename.str()); 
+        if (write)  save(filename.str()); 
 	}
 }
 
@@ -61,13 +63,13 @@ void Simulator::oneStep()
 	// compute the speedIncrement
 	for(int i = 0; i < agent; ++i)
 	{
-		glm::vec3 speedA(0.f),speedS(0.f),speedC(0.f);
-		float countA=0,countS=0,countC=0;
+		glm::dvec3 speedA(0.0),speedS(0.0),speedC(0.0);
+		double countA=0,countS=0,countC=0;
 		for(int j = 0; j < agent; ++j)
 		{
 			if(i == j) continue;
-			glm::vec3 direction = position[j] - position[i];
-			float dist = glm::length(direction);
+			glm::dvec3 direction = position[j] - position[i];
+			double dist = glm::length(direction);
 
 			// separation/alignment/cohesion
 			if (dist < rs ) { speedS -= direction * ws; countS++; }
@@ -87,8 +89,8 @@ void Simulator::oneStep()
 		speed[i] += speedIncrement[i];
 
 		// limit the speed;
-		const float maxSpeed = 0.2;
-		float s = glm::length(speed[i]);
+		const double maxSpeed = 0.2;
+		double s = glm::length(speed[i]);
 		if (s>maxSpeed)
 			speed[i] *= maxSpeed/s;
 	}

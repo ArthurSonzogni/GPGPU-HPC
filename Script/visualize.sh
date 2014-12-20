@@ -16,7 +16,7 @@ cd $here
 cd ../$program
 cmake .
 mkdir -p output
-make run
+make write
 
 # launch gnuplot
 cd $here

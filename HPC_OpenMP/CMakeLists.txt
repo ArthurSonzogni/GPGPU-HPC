@@ -57,3 +57,10 @@ add_custom_target(run
     DEPENDS ${PROJECT_NAME}
     WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
 )
+
+# command write
+add_custom_target(write
+    COMMAND ${BIN}/${PROJECT_NAME} -write 1
+    DEPENDS ${PROJECT_NAME}
+    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+)

@@ -3,4 +3,12 @@
 here=$(dirname $(pwd)/$0)
 cd $here
 
-echo "TODO"
+folder="Sequential HPC_OpenMP HPC_MPI"
+
+for i in $folder
+do
+    cd $here/../$i
+    cmake -DRUN_ARGS="-write;0;-agents;1024" .
+    make
+    time make run
+done

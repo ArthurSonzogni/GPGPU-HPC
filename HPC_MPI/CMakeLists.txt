@@ -58,15 +58,7 @@ target_link_libraries(
 
 # command run
 add_custom_target(run
-    COMMAND ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} 4 ${BIN}/${PROJECT_NAME}
-    DEPENDS ${PROJECT_NAME}
-    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
-)
-
-
-# command write
-add_custom_target(write
-    COMMAND ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} 4 ${BIN}/${PROJECT_NAME} -write 1
+    COMMAND ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} 4 ${BIN}/${PROJECT_NAME} ${RUN_ARGS}
     DEPENDS ${PROJECT_NAME}
     WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
 )

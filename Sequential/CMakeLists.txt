@@ -51,14 +51,8 @@ target_link_libraries(
 
 # command run
 add_custom_target(run
-    COMMAND ${BIN}/${PROJECT_NAME}
+    COMMAND ${BIN}/${PROJECT_NAME} ${RUN_ARGS}
     DEPENDS ${PROJECT_NAME}
     WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
 )
 
-# command write
-add_custom_target(write
-    COMMAND ${BIN}/${PROJECT_NAME} -write 1
-    DEPENDS ${PROJECT_NAME}
-    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
-)

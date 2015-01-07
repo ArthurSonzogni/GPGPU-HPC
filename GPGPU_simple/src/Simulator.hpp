@@ -1,7 +1,7 @@
 #ifndef SIMULATOR_N4GERFZE
 #define SIMULATOR_N4GERFZE
 
-#include <dvector>
+#include <vector>
 #include <string>
 
 class Simulator
@@ -10,26 +10,26 @@ class Simulator
         Simulator(
             int agent,
             int step,
-            double wc, double wa, double ws,
-            double rc, double ra, double rs,
+            float wc, float wa, float ws,
+            float rc, float ra, float rs,
             bool write);
 
         void run();
 
     private:
         // CPU DATA
-        std::dvector<double>  position;
+        std::vector<float>  position;
 
         // GPU DATA
-        double* position_cuda;
-        double* speed_cuda;
-        double* speedIncrement_cuda;
+        float* position_cuda;
+        float* speed_cuda;
+        float* speedIncrement_cuda;
 
 
         void init();
 
         int agent,step;
-        double wc,wa,ws,rc,ra,rs;
+        float wc,wa,ws,rc,ra,rs;
         bool write;
 
         void oneStep();

@@ -16,16 +16,16 @@ inline void gpuAssert(cudaError_t code, const char *file, int line, bool abort=t
 	}
 }
 
-double randDouble()
+float randDouble()
 { 
-	return rand() / double(RAND_MAX);
+	return rand() / float(RAND_MAX);
 }
 
 Simulator::Simulator(
 		int agent,
 		int step,
-		double wc, double wa, double ws,
-		double rc, double ra, double rs,
+		float wc, float wa, float ws,
+		float rc, float ra, float rs,
         bool write):
 	agent(agent),step(step),
 	wc(wc),wa(wa),ws(ws),
@@ -47,13 +47,15 @@ void Simulator::init()
 		position.push_back(randDouble()); // z
 	}
 
+	gpuCheck(cudaGetLastError());
+
 	// create the cuda data
-	gpuCheck(cudaMalloc((void**)&position_cuda,position.size()*sizeof(double)));
-	gpuCheck(cudaMalloc((void**)&speed_cuda,position.size()*sizeof(double)));
-	gpuCheck(cudaMalloc((void**)&speedIncrement_cuda,position.size()*sizeof(double)));
+	gpuCheck(cudaMalloc((void**)&position_cuda,position.size()*sizeof(float)));
+	gpuCheck(cudaMalloc((void**)&speed_cuda,position.size()*sizeof(float)));
+	gpuCheck(cudaMalloc((void**)&speedIncrement_cuda,position.size()*sizeof(float)));
 
 	// copy the position to cuda
-	gpuCheck(cudaMemcpy(position_cuda, &(position[0]), 3*agent*sizeof(double), cudaMemcpyHostToDevice));
+	gpuCheck(cudaMemcpy(position_cuda, &(position[0]), 3*agent*sizeof(float), cudaMemcpyHostToDevice));
 
 	// init speed to zero
 	dim3 gridSize(1,1,1);
@@ -70,8 +72,8 @@ void Simulator::run()
 	for(int i = 0; i < step; ++i)
 	{
 		oneStep();
-		//progressBar.update(i/double(step));
-		gpuCheck(cudaMemcpy(&(position[0]), position_cuda, 3*agent*sizeof(double), cudaMemcpyDeviceToHost));
+		//progressBar.update(i/float(step));
+		gpuCheck(cudaMemcpy(&(position[0]), position_cuda, 3*agent*sizeof(float), cudaMemcpyDeviceToHost));
 
 		// print the result
 		std::stringstream filename;
@@ -94,12 +96,12 @@ void Simulator::oneStep()
 	//	for(int i = 0; i < agent; ++i)
 	//	{
 	//		glm::dvec3 speedA(0.0),speedS(0.0),speedC(0.0);
-	//		double countA=0,countS=0,countC=0;
+	//		float countA=0,countS=0,countC=0;
 	//		for(int j = 0; j < agent; ++j)
 	//		{
 	//			if(i == j) continue;
 	//			glm::dvec3 direction = position[j] - position[i];
-	//			double dist = glm::length(direction);
+	//			float dist = glm::length(direction);
 	//
 	//			// separation/alignment/cohesion
 	//			if (dist < rs )
@@ -130,8 +132,8 @@ void Simulator::oneStep()
 	//		speed[i] += speedIncrement[i];
 	//
 	//		// limit the speed;
-	//		const double maxSpeed = 0.3;
-	//		double s = glm::length(speed[i]);
+	//		const float maxSpeed = 0.3;
+	//		float s = glm::length(speed[i]);
 	//		if (s>maxSpeed)
 	//			speed[i] *= maxSpeed/s;
 	//	}

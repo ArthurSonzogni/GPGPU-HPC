@@ -6,6 +6,8 @@
 #include <sstream>
 #include "Kernels.hpp"
 
+#include "../../Common/src/ProgressBar.hpp"
+
 #define gpuCheck(ans) { gpuAssert((ans), __FILE__, __LINE__); }
 inline void gpuAssert(cudaError_t code, const char *file, int line, bool abort=true)
 {
@@ -58,21 +60,22 @@ void Simulator::init()
 	gpuCheck(cudaMemcpy(position_cuda, &(position[0]), 3*agent*sizeof(float), cudaMemcpyHostToDevice));
 
 	// init speed to zero
-	dim3 gridSize(1,1,1);
-	dim3 blockSize(32,32,1);
-	// The kernel doesn't seem to be working
-	initToZero<<<blockSize,gridSize>>>(speed_cuda, 3*agent);
-	gpuCheck(cudaGetLastError());
+    int blockSize;
+    int minGridSize;
+    cudaOccupancyMaxPotentialBlockSize(&minGridSize, &blockSize, initToZero, 0, 3*agent);
+    int gridSize = (3*agent + blockSize - 1) / blockSize; 
+    initToZero<<<gridSize,blockSize>>>(speed_cuda, 3*agent);
+    gpuCheck(cudaGetLastError());
 }
 
 
 void Simulator::run()
 {
-	//	ProgressBar progressBar;
+    ProgressBar progressBar;
 	for(int i = 0; i < step; ++i)
 	{
 		oneStep();
-		//progressBar.update(i/float(step));
+		progressBar.update(i/float(step));
 		gpuCheck(cudaMemcpy(&(position[0]), position_cuda, 3*agent*sizeof(float), cudaMemcpyDeviceToHost));
 
 		// print the result
@@ -84,14 +87,25 @@ void Simulator::run()
 
 void Simulator::oneStep()
 {
-	dim3 gridSize(1,1,1);
-	dim3 blockSize(32,32,1);
 
-	gpuCheck(cudaGetLastError());
-	computeSpeedIncrement<<<blockSize,gridSize>>>(position_cuda, speed_cuda, speedIncrement_cuda, agent, rs,ra,rc, ws,wa,wc);
-	gpuCheck(cudaGetLastError());
-	updateSpeedPosition<<<blockSize,gridSize>>>(position_cuda, speed_cuda, speedIncrement_cuda, 3*agent);
-	gpuCheck(cudaGetLastError());
+    int blockSize,minGridSize,gridSize,dataSize;
+
+    // computeSpeedIncrement
+    dataSize = agent;
+    cudaOccupancyMaxPotentialBlockSize(&minGridSize, &blockSize, initToZero, 0, dataSize);
+    gridSize = (dataSize + blockSize - 1) / blockSize; 
+	computeSpeedIncrement<<<blockSize,gridSize>>>(position_cuda, speed_cuda, speedIncrement_cuda, dataSize, rs,ra,rc, ws,wa,wc);
+    gpuCheck(cudaGetLastError());
+
+    // computeSpeedIncrement
+    dataSize = 3 * agent;
+    cudaOccupancyMaxPotentialBlockSize(&minGridSize, &blockSize, initToZero, 0, dataSize);
+    gridSize = (dataSize + blockSize - 1) / blockSize; 
+	updateSpeedPosition<<<blockSize,gridSize>>>(position_cuda, speed_cuda, speedIncrement_cuda, dataSize);
+    gpuCheck(cudaGetLastError());
+
+    /*dim3 gridSize(1,1,1);*/
+    /*dim3 blockSize(8,8,1);*/
 	//	// compute the speedIncrement
 	//	for(int i = 0; i < agent; ++i)
 	//	{

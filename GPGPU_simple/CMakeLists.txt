@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.6)
+cmake_minimum_required(VERSION 2.8)
 
 # project name
 set(PROJECT_NAME GPGPU)
@@ -31,7 +31,7 @@ find_package(CUDA REQUIRED)
 
 # set some options
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wno-unused-parameter")
-set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} -O3 -ccbin g++")
+set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} -O3 -ccbin g++ -arch=sm_12")
 
 
 cuda_add_executable(
@@ -47,11 +47,15 @@ include_directories(
     ${COM}
 )
 
+message(STATUS COM= ${COM})
+
 CUDA_INCLUDE_DIRECTORIES(
+    ${CMAKE_CURRENT_SOURCE_DIR}
     ${SRC}
     ${INC}
     ${COM}
 )
+
 
 # libs
 target_link_libraries(

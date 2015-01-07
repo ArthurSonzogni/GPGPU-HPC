@@ -2,14 +2,15 @@
 
 __global__ void initToZero(float *array, int size)
 {
-	int x = blockIdx.x * blockDim.x + threadIdx.x;
-	int y = blockIdx.y * blockDim.y + threadIdx.y;
-	int index = x*blockDim.y*gridDim.y + y;
-	while(index < size)
-	{
-		array[index] = 0.0;
-		index += blockDim.x*gridDim.x*blockDim.y*gridDim.y;
-	}
+    /*array[0] = 0.f;*/
+    int x = blockIdx.x * blockDim.x + threadIdx.x;
+    int y = blockIdx.y * blockDim.y + threadIdx.y;
+    int index = x*blockDim.y*gridDim.y + y;
+    while (index < size)
+    {
+        array[index] = 0.0;
+        index += blockDim.x*gridDim.x*blockDim.y*gridDim.y;
+    }
 }
 
 __global__ void computeSpeedIncrement(float *positions, float *speed, float *speedIncrement, int size, float rs, float ra, float rc, float ws, float wa, float wc)
@@ -17,7 +18,7 @@ __global__ void computeSpeedIncrement(float *positions, float *speed, float *spe
 	int x = blockIdx.x * blockDim.x + threadIdx.x;
 	int y = blockIdx.y * blockDim.y + threadIdx.y;
 	int index = x*blockDim.y*gridDim.y + y;
-	while(index < size)
+	if(index < size)
 	{
 		float countS = 0;
 		float countA = 0;
@@ -41,6 +42,7 @@ __global__ void computeSpeedIncrement(float *positions, float *speed, float *spe
 				speedSY -= directionY * ws;
 				speedSZ -= directionZ * ws;
 				countS++;
+
 			}
 			if (dist < ra )
 			{
@@ -49,13 +51,13 @@ __global__ void computeSpeedIncrement(float *positions, float *speed, float *spe
 				speedAZ += speed[3*i+2]  * wa;
 				countA++;
 			}
-			if (dist < rc )
-			{
-				speedCX += directionX * wc;
-				speedCY += directionY * wc;
-				speedCZ += directionZ * wc;
-				countC++;
-			}
+            if (dist < rc )
+            {
+                speedCX += directionX * wc;
+                speedCY += directionY * wc;
+                speedCZ += directionZ * wc;
+                countC++;
+            }
 			speedSX = countS>0?speedSX/countS:speedSX;
 			speedSY = countS>0?speedSY/countS:speedSY;
 			speedSZ = countS>0?speedSZ/countS:speedSZ;

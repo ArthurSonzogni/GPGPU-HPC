@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 2.6)
 
 # project name
-set(PROJECT_NAME HPC)
+set(PROJECT_NAME HPC_MPI)
 project(${PROJECT_NAME})
 
 # bin,src,common and include dir

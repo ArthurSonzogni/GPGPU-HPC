@@ -18,7 +18,7 @@ __global__ void computeSpeedIncrement(float *positions, float *speed, float *spe
 	int x = blockIdx.x * blockDim.x + threadIdx.x;
 	int y = blockIdx.y * blockDim.y + threadIdx.y;
 	int index = x*blockDim.y*gridDim.y + y;
-	if(index < size)
+	while(index < size)
 	{
 		float countS = 0;
 		float countA = 0;
@@ -29,6 +29,7 @@ __global__ void computeSpeedIncrement(float *positions, float *speed, float *spe
 		for(int i = 0 ; i < size ; i++)
 		{
 			if(i == index) continue;
+			
 			//glm::vec3 direction = position[j] - position[i];
 			float directionX = positions[3*i]-positions[3*index];
 			float directionY = positions[3*i+1]-positions[3*index+1];
@@ -58,17 +59,45 @@ __global__ void computeSpeedIncrement(float *positions, float *speed, float *spe
                 speedCZ += directionZ * wc;
                 countC++;
             }
-			speedSX = countS>0?speedSX/countS:speedSX;
-			speedSY = countS>0?speedSY/countS:speedSY;
-			speedSZ = countS>0?speedSZ/countS:speedSZ;
 
-			speedAX = countA>0?speedAX/countA:speedAX;
-			speedAY = countA>0?speedAY/countA:speedAY;
-			speedAZ = countA>0?speedAZ/countA:speedAZ;
+			if(countS > 0)
+			{
+				speedSX = speedSX/countS;
+				speedSY = speedSY/countS;
+				speedSZ = speedSZ/countS;
+			}
+			else
+			{
+				speedSX = speedSX;
+				speedSY = speedSY;
+				speedSZ = speedSZ;
+			}
 
-			speedCX = countC>0?speedCX/countC:speedCX;
-			speedCY = countC>0?speedCY/countC:speedCY;
-			speedCZ = countC>0?speedCZ/countC:speedCZ;
+			if(countA > 0)
+			{
+				speedAX = speedAX/countA;
+				speedAY = speedAY/countA;
+				speedAZ = speedAZ/countA;
+			}
+			else
+			{
+				speedAX = speedAX;
+				speedAY = speedAY;
+				speedAZ = speedAZ;
+			}
+
+			if(countC > 0)
+			{
+				speedCX = speedCX/countC;
+				speedCY = speedCY/countC;
+				speedCZ = speedCZ/countC;
+			}
+			else
+			{
+				speedCX = speedCX;
+				speedCY = speedCY;
+				speedCZ = speedCZ;
+			}
 
 			speedIncrement[3*i] = speedCX+speedAX+speedSX;
 			speedIncrement[3*i+1] = speedCY+speedAY+speedSY;
@@ -85,9 +114,24 @@ __global__ void updateSpeedPosition(float *positions, float *speed, float *speed
 	int index = x*blockDim.y*gridDim.y + y;
 	while(index < size)
 	{
-		speed[index] += speedIncrement[index];
-		positions[index] += speed[index];
-		positions[index] = positions[index]-floor(positions[index]);
+		speed[3*index] += speedIncrement[3*index];
+		speed[3*index+1] += speedIncrement[3*index+1];
+		speed[3*index+2] += speedIncrement[3*index+2];
+		float maxSpeed = 0.2f;
+		float s = sqrt(speed[3*index]*speed[3*index] + speed[3*index+1]*speed[3*index+1] + speed[3*index+2]*speed[3*index+2]);
+		if(s > maxSpeed)
+		{
+			speed[3*index] *= maxSpeed/s;
+			speed[3*index+1] *= maxSpeed/s;
+			speed[3*index+2] *= maxSpeed/s;
+		}
+		positions[3*index] += speed[3*index];
+		positions[3*index] = positions[3*index]-floor(positions[3*index]);
+		positions[3*index+1] += speed[3*index+1];
+		positions[3*index+1] = positions[3*index+1]-floor(positions[3*index+1]);
+		positions[3*index+2] += speed[3*index+2];
+		positions[3*index+2] = positions[3*index+2]-floor(positions[3*index+2]);
+
 		index += blockDim.x*gridDim.x*blockDim.y*gridDim.y;
 	}
 }

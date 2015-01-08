@@ -97,68 +97,12 @@ void Simulator::oneStep()
 	computeSpeedIncrement<<<blockSize,gridSize>>>(position_cuda, speed_cuda, speedIncrement_cuda, dataSize, rs,ra,rc, ws,wa,wc);
     gpuCheck(cudaGetLastError());
 
-    // computeSpeedIncrement
-    dataSize = 3 * agent;
+    // updatePosition
+    dataSize = agent;
     cudaOccupancyMaxPotentialBlockSize(&minGridSize, &blockSize, initToZero, 0, dataSize);
     gridSize = (dataSize + blockSize - 1) / blockSize; 
 	updateSpeedPosition<<<blockSize,gridSize>>>(position_cuda, speed_cuda, speedIncrement_cuda, dataSize);
     gpuCheck(cudaGetLastError());
-
-    /*dim3 gridSize(1,1,1);*/
-    /*dim3 blockSize(8,8,1);*/
-	//	// compute the speedIncrement
-	//	for(int i = 0; i < agent; ++i)
-	//	{
-	//		glm::dvec3 speedA(0.0),speedS(0.0),speedC(0.0);
-	//		float countA=0,countS=0,countC=0;
-	//		for(int j = 0; j < agent; ++j)
-	//		{
-	//			if(i == j) continue;
-	//			glm::dvec3 direction = position[j] - position[i];
-	//			float dist = glm::length(direction);
-	//
-	//			// separation/alignment/cohesion
-	//			if (dist < rs )
-	//			{
-	//				speedS -= direction * ws;
-	//				countS++;
-	//			}
-	//			if (dist < ra )
-	//			{
-	//				speedA += speed[j]  * wa;
-	//				countA++;
-	//			}
-	//			if (dist < rc )
-	//			{
-	//				speedC += direction * wc;
-	//				countC++;
-	//			}
-	//		}
-	//		speedC = countC>0?speedC/countC:speedC;
-	//		speedA = countA>0?speedA/countA:speedA;
-	//		speedS = countS>0?speedS/countS:speedS;
-	//		speedIncrement[i] = speedC+speedA+speedS;
-	//	}
-	//
-	//	// sum the speedIncrement to the speed
-	//	for(int i = 0; i < agent; ++i)
-	//	{
-	//		speed[i] += speedIncrement[i];
-	//
-	//		// limit the speed;
-	//		const float maxSpeed = 0.3;
-	//		float s = glm::length(speed[i]);
-	//		if (s>maxSpeed)
-	//			speed[i] *= maxSpeed/s;
-	//	}
-	//
-	//	// sum the speed to the position (Euler intégration)
-	//	for(int i = 0; i < agent; ++i)
-	//	{
-	//		position[i] += speed[i];
-	////		position[i] = glm::modf(position[i], bounds);
-	//		position[i] = glm::fract(position[i]);
-	//	}
 }
 
 void Simulator::save(const std::string& filename)

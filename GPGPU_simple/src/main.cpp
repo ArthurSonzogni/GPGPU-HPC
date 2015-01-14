@@ -14,7 +14,7 @@ int main(int argc, const char *argv[])
     arguments.setDefault("ws", "35");
     arguments.setDefault("rc", "0.11");
     arguments.setDefault("ra", "0.15");
-    arguments.setDefault("rs", "0.01");
+	arguments.setDefault("rs", "0.01");
     arguments.setDefault("write", "0");
 
     // parse the argument

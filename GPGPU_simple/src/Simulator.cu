@@ -95,6 +95,8 @@ void Simulator::oneStep()
     cudaOccupancyMaxPotentialBlockSize(&minGridSize, &blockSize, initToZero, 0, dataSize);
     gridSize = (dataSize + blockSize - 1) / blockSize; 
 	computeSpeedIncrement<<<blockSize,gridSize>>>(position_cuda, speed_cuda, speedIncrement_cuda, dataSize, rs,ra,rc, ws,wa,wc);
+	cudaThreadSynchronize();
+
     gpuCheck(cudaGetLastError());
 
     // updatePosition

@@ -29,80 +29,62 @@ __global__ void computeSpeedIncrement(float *positions, float *speed, float *spe
 		for(int i = 0 ; i < size ; i++)
 		{
 			if(i == index) continue;
-			
+
 			//glm::vec3 direction = position[j] - position[i];
 			float directionX = positions[3*i]-positions[3*index];
 			float directionY = positions[3*i+1]-positions[3*index+1];
 			float directionZ = positions[3*i+2]-positions[3*index+2];
-			float dist = sqrt(directionX*directionX+directionY*directionY+directionZ*directionZ);
+			float dist = sqrt(directionX*directionX + directionY*directionY + directionZ*directionZ);
 
 			// separation/alignment/cohesion
 			if (dist < rs )
 			{
-				speedSX -= directionX * ws;
-				speedSY -= directionY * ws;
-				speedSZ -= directionZ * ws;
+				speedSX -= directionX;
+				speedSY -= directionY;
+				speedSZ -= directionZ;
 				countS++;
 
 			}
 			if (dist < ra )
 			{
-				speedAX += speed[3*i]  * wa;
-				speedAY += speed[3*i+1]  * wa;
-				speedAZ += speed[3*i+2]  * wa;
+				speedAX += speed[3*i];
+				speedAY += speed[3*i+1];
+				speedAZ += speed[3*i+2];
 				countA++;
 			}
-            if (dist < rc )
-            {
-                speedCX += directionX * wc;
-                speedCY += directionY * wc;
-                speedCZ += directionZ * wc;
-                countC++;
-            }
-
-			if(countS > 0)
+			if (dist < rc )
 			{
-				speedSX = speedSX/countS;
-				speedSY = speedSY/countS;
-				speedSZ = speedSZ/countS;
+				speedCX += directionX;
+				speedCY += directionY;
+				speedCZ += directionZ;
+				countC++;
 			}
-			else
-			{
-				speedSX = speedSX;
-				speedSY = speedSY;
-				speedSZ = speedSZ;
-			}
-
-			if(countA > 0)
-			{
-				speedAX = speedAX/countA;
-				speedAY = speedAY/countA;
-				speedAZ = speedAZ/countA;
-			}
-			else
-			{
-				speedAX = speedAX;
-				speedAY = speedAY;
-				speedAZ = speedAZ;
-			}
-
-			if(countC > 0)
-			{
-				speedCX = speedCX/countC;
-				speedCY = speedCY/countC;
-				speedCZ = speedCZ/countC;
-			}
-			else
-			{
-				speedCX = speedCX;
-				speedCY = speedCY;
-				speedCZ = speedCZ;
-			}
-
-			speedIncrement[3*i] = speedCX+speedAX+speedSX;
-			speedIncrement[3*i+1] = speedCY+speedAY+speedSY;
-			speedIncrement[3*i+2] = speedCZ+speedAZ+speedSZ;
 		}
+
+		if(countS > 0)
+		{
+			speedSX = speedSX*ws/countS;
+			speedSY = speedSY*ws/countS;
+			speedSZ = speedSZ*ws/countS;
+		}
+
+		if(countA > 0)
+		{
+			speedAX = speedAX*wa/countA;
+			speedAY = speedAY*wa/countA;
+			speedAZ = speedAZ*wa/countA;
+		}
+
+		if(countC > 0)
+		{
+			speedCX = speedCX*wc/countC;
+			speedCY = speedCY*wc/countC;
+			speedCZ = speedCZ*wc/countC;
+		}
+
+		speedIncrement[3*index] = speedCX+speedAX+speedSX;
+		speedIncrement[3*index+1] = speedCY+speedAY+speedSY;
+		speedIncrement[3*index+2] = speedCZ+speedAZ+speedSZ;
 		index += blockDim.x*gridDim.x*blockDim.y*gridDim.y;
 	}
 }
@@ -117,7 +99,7 @@ __global__ void updateSpeedPosition(float *positions, float *speed, float *speed
 		speed[3*index] += speedIncrement[3*index];
 		speed[3*index+1] += speedIncrement[3*index+1];
 		speed[3*index+2] += speedIncrement[3*index+2];
-		float maxSpeed = 0.2f;
+		float maxSpeed = 0.2;
 		float s = sqrt(speed[3*index]*speed[3*index] + speed[3*index+1]*speed[3*index+1] + speed[3*index+2]*speed[3*index+2]);
 		if(s > maxSpeed)
 		{
@@ -126,10 +108,11 @@ __global__ void updateSpeedPosition(float *positions, float *speed, float *speed
 			speed[3*index+2] *= maxSpeed/s;
 		}
 		positions[3*index] += speed[3*index];
-		positions[3*index] = positions[3*index]-floor(positions[3*index]);
 		positions[3*index+1] += speed[3*index+1];
-		positions[3*index+1] = positions[3*index+1]-floor(positions[3*index+1]);
 		positions[3*index+2] += speed[3*index+2];
+
+		positions[3*index] = positions[3*index]-floor(positions[3*index]);
+		positions[3*index+1] = positions[3*index+1]-floor(positions[3*index+1]);
 		positions[3*index+2] = positions[3*index+2]-floor(positions[3*index+2]);
 
 		index += blockDim.x*gridDim.x*blockDim.y*gridDim.y;

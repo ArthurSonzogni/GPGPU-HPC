@@ -155,12 +155,8 @@ void Simulator::virtualTransmission()
             if ( rank != mpi_rank )
             {
                 MPI_Wait(&sendReq[bufferPosition],&status);
-                virtualPosition.push_back(glm::dvec3(
-                    buffer[0],buffer[1],buffer[2]
-                ));
-                virtualSpeed.push_back(glm::dvec3(
-                    buffer[3],buffer[4],buffer[5]
-                ));
+                virtualPosition.push_back(buffer[2*bufferPosition]);
+                virtualSpeed.push_back(buffer[2*bufferPosition+1]);
             }
             ++bufferPosition;
         }

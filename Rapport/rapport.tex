@@ -1,0 +1,114 @@
+%------------------------------------------------------------------------------%
+%                                                                              %
+%                                                                              %
+%   EnsiRapport Template                                                       %
+%                                                                              %
+%   Version : 1.0                                                              %
+%                                                                              %
+%   Auteur : Arthur Sonzogni                                                   %
+%                                                                              %
+%------------------------------------------------------------------------------%
+
+
+
+\documentclass[liens,entete-ensimag,margeCorrection]{ensirapport}
+% options possibles:
+% -  ('10pt', '11pt' and '12pt') taille de police.
+% -  ('a4paper', 'letterpaper', 'a5paper', 'legalpaper', 'executivepaper' and 'landscape') taille de papier.
+% -  ('sans' and 'roman') famille de police.
+% -- ('liens') ajoute les liens dans le sommaire.
+% -- ('entete,entete-ensimag') ajoute des belles entetes avec logo ensimag ou pas.
+% -- ('margeCorrection') diminue les enormes marges de latex.
+% -- ('minted') inclus minted pour colorer les codes sources, ne fonctionne pas à l'ensimag.
+% -  ('onecolumn','twocolumn') une ou deux colonnes
+% -  ('fleqn','leqno') formules mathématique alignées a gauche ou a droite.
+% -  ('notitlepage','titlepage') sans ou avec page de garde pour le titre
+
+%\usepackage[draft]{graphicx}
+\usepackage[nottoc, notlof, notlot]{tocbibind}
+\setlength{\parindent}{0cm} % Défini la largeur de l'alinéa de 1cm.
+
+
+
+\begin{document}
+
+
+\title{Mon titre}
+\author{Arthur Sonzogni}
+\date{\today}
+
+\renewcommand{\labelitemi}{\textbullet}
+
+\large
+\thispagestyle{plain}
+
+\begin{center}
+
+
+Institut National Polytechnique de Grenoble
+
+École Nationale Supérieure d'Informatique et de Mathématiques Appliquées de
+Grenoble
+
+\vspace{0.4cm}
+
+
+{\huge \bfseries HPC \& GPGPU}
+
+\vspace{0.5cm}
+{\large \bfseries Rapport des travaux}
+
+
+\vspace{1.5cm}
+
+\hrule width \textwidth height 2pt
+\vspace{0.4cm}
+{\Huge \bfseries HPC \& GPGPU.}
+\vspace{0.4cm}
+\hrule width \textwidth height 2pt
+
+\vspace{2cm}
+
+\end{center}
+\begin{minipage}{0.5\textwidth}
+    
+{\it Auteurs:}
+
+Arthur SONZOGNI
+Thomas Coeffic
+
+3A Grenoble INP - Ensimag
+
+Filière MMIS (Modélisation Mathématique, Images, Simulation)
+
+\end{minipage}
+
+
+\vspace{2cm}
+
+\begin{center}
+Grenoble, le \today
+\end{center}
+
+\newpage
+\normalsize
+
+%\maketitle
+\tableofcontents
+
+\section{Aide mémoire}
+
+\paragraph{Séquential}
+
+\paragraph{OpenMP\_Simple}
+\paragraph{OpenMP\_GRID ???}
+
+\paragraph{GPGPU\_simple} partitionement par agents
+
+\paragraph{HPC\_MPI} partitionement par agents
+\paragraph{HPC\_MPI\_GRID} partitionement par espace
+
+
+
+
+\end{document}

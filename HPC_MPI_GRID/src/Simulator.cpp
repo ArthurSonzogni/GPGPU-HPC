@@ -128,22 +128,14 @@ void Simulator::virtualTransmission()
             if ( rank != mpi_rank )
             {
                 double buffer[6];
+                
                 buffer[0] = meanPosition.x;
                 buffer[1] = meanPosition.y;
                 buffer[2] = meanPosition.z;
                 buffer[3] = meanSpeed.x;
                 buffer[4] = meanSpeed.y;
                 buffer[5] = meanSpeed.z;
-                //static_cast<glm::dvec3>(buffer[0]) = meanPosition;
-                //static_cast<glm::dvec3>(buffer[3]) = meanSpeed;
                 MPI_Send(buffer, 6, MPI_DOUBLE, rank, 0, MPI_COMM_WORLD);
-                //std::cout << mpi_rank << " send to " << rank << " data = "
-                    //<< buffer[0] << " "
-                    //<< buffer[1] << " "
-                    //<< buffer[2] << " "
-                    //<< buffer[3] << " "
-                    //<< buffer[4] << " "
-                    //<< buffer[5] << std::endl;
             }
             ++bufferPosition;
         }
@@ -151,6 +143,9 @@ void Simulator::virtualTransmission()
 
     // attente de reception
     {
+        virtualPosition.clear();
+        virtualSpeed.clear();
+        
         int bufferPosition = 0;
         for(int x = -1 ; x <= 1 ; ++x )
         for(int y = -1 ; y <= 1 ; ++y )
@@ -160,13 +155,12 @@ void Simulator::virtualTransmission()
             if ( rank != mpi_rank )
             {
                 MPI_Wait(&sendReq[bufferPosition],&status);
-                //std::cout << mpi_rank << " wait from " << rank << " data = "
-                    //<< buffer[bufferPosition*2  ].x << " "
-                    //<< buffer[bufferPosition*2  ].y << " "
-                    //<< buffer[bufferPosition*2  ].z << " "
-                    //<< buffer[bufferPosition*2+1].x << " "
-                    //<< buffer[bufferPosition*2+1].y << " "
-                    //<< buffer[bufferPosition*2+1].z << std::endl;
+                virtualPosition.push_back(glm::dvec3(
+                    buffer[0],buffer[1],buffer[2]
+                ));
+                virtualSpeed.push_back(glm::dvec3(
+                    buffer[3],buffer[4],buffer[5]
+                ));
             }
             ++bufferPosition;
         }
@@ -257,6 +251,11 @@ void Simulator::compute()
             *my_position = glm::fract(*my_position);
         }
     }
+}
+
+void Simulator::outInTransmission()
+{
+    
 }
 
 void Simulator::save(const std::string& filename)

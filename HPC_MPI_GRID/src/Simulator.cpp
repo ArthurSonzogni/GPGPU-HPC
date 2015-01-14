@@ -178,6 +178,7 @@ void Simulator::run()
     ProgressBar progressBar;
     for(int i = 0; i < step; ++i)
     {
+        std::cout << mpi_rank << std::endl;
         oneStep();
         if (mpi_rank == 0)  progressBar.update(i/double(step));
         
@@ -202,15 +203,15 @@ void Simulator::compute()
         std::list<glm::dvec3>::iterator my_position,other_position, other_speed, my_speedIncrement;
 
         for(my_position = position.begin(), my_speedIncrement = speedIncrement.begin();
-            my_position != position.end(), my_speedIncrement != speedIncrement.end();
+            my_position != position.end();
             ++my_position,++my_speedIncrement)
         {
             glm::dvec3 speedA(0.0),speedS(0.0),speedC(0.0);
             double countA=0,countS=0,countC=0;
 
             for(other_position = position.begin(), other_speed = speed.begin();
-                other_position != position.end(), other_speed != speed.end();
-                ++my_position,++my_speedIncrement)
+                other_position != position.end();
+                ++other_position,++other_speed)
             {
                 if ( other_position != my_position )
                 {
@@ -240,8 +241,8 @@ void Simulator::compute()
         std::list<glm::dvec3>::iterator my_position, my_speed, my_speedIncrement;
 
         for(my_position = position.begin(), my_speed = speed.begin(), my_speedIncrement = speedIncrement.begin() ;
-            my_position != position.end(), my_speed != speed.end(), my_speedIncrement != speedIncrement.end() ;
-            ++my_position, ++my_speed, +my_speedIncrementedIncrement)
+            my_position != position.end() ;
+            ++my_position, ++my_speed, ++my_speedIncrement)
         {
             // increment the speed
             *my_speed += *my_speedIncrement;
@@ -253,7 +254,7 @@ void Simulator::compute()
                 *my_speed *= maxSpeed/s;
 
             *my_position += *my_speed;
-            *my_position = glm::frac(*position[i]);
+            *my_position = glm::fract(*my_position);
         }
     }
 }

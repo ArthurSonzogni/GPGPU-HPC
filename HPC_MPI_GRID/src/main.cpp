@@ -15,7 +15,6 @@ int main(int argc, const char *argv[])
     MPI_Comm_rank(MPI_COMM_WORLD,&mpi_rank);
     MPI_Comm_size(MPI_COMM_WORLD,&mpi_size);
 
-
     CommandArguments arguments;
 
     // set arguments defaults values

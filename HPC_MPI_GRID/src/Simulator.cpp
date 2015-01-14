@@ -168,7 +168,6 @@ void Simulator::run()
     ProgressBar progressBar;
     for(int i = 0; i < step; ++i)
     {
-        std::cout << mpi_rank << std::endl;
         oneStep();
         if (mpi_rank == 0)  progressBar.update(i/double(step));
         
@@ -209,16 +208,19 @@ void Simulator::compute()
                     double dist = glm::length(direction);
 
                     // separation/alignment/cohesion
-                    if (dist < rs ) { speedS -= direction * ws; countS++; }
-                    if (dist < ra ) { speedA += (*other_speed)  * wa; countA++; }
-                    if (dist < rc ) { speedC += direction * wc; countC++; }
-
-                    speedC = countC>0?speedC/countC:speedC;
-                    speedA = countA>0?speedA/countA:speedA;
-                    speedS = countS>0?speedS/countS:speedS;
-                    
+                    if (dist < rs ) { speedS -= direction; countS++; }
+                    if (dist < ra ) { speedA += (*other_speed); countA++; }
+                    if (dist < rc ) { speedC += direction; countC++; }
                 }
 
+                speedC = countC>0?speedC/countC:speedC;
+                speedA = countA>0?speedA/countA:speedA;
+                speedS = countS>0?speedS/countS:speedS;
+
+                *my_speedIncrement =
+                    wc*speedC+
+                    wa*speedA+
+                    ws*speedS;
             }
 
             *my_speedIncrement = speedC+speedA+speedS;
@@ -251,7 +253,34 @@ void Simulator::compute()
 
 void Simulator::outInTransmission()
 {
-    
+    // extraction des sorties
+    std::vector<glm::dvec3> outPosition[3][3][3];
+    std::vector<glm::dvec3> outSpeed[3][3][3];
+
+    std::list<glm::dvec3>::iterator my_position, my_speed;
+
+    for(my_position = position.begin(), my_speed = speed.begin() ;
+        my_position != position.end() ;)
+    {
+        glm::ivec3 ipos = glm::ivec3((*my_position) * double(grid_size));
+        if ( ipos != grid_position )
+        {
+            glm::ivec3 d = ipos - grid_position + glm::ivec3(1,1,1);
+            d = glm::min(d,glm::ivec3(0,0,0));
+            d = glm::max(d,glm::ivec3(2,2,2));
+            outPosition[d.x][d.y][d.z].push_back( *my_position );
+            outPosition[d.x][d.y][d.z].push_back( *my_speed );
+
+            my_position = position.erase(my_position);
+            my_speed = speed.erase(my_speed);
+        }
+        else
+        {
+            ++my_position;
+            ++my_speed;
+        }
+    }
+
 }
 
 void Simulator::save(const std::string& filename)

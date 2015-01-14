@@ -101,16 +101,18 @@ void Simulator::oneStep()
 			double dist = glm::length(direction);
 
 			// separation/alignment/cohesion
-			if (dist < rs ) { speedS -= direction * ws; countS++; }
-			if (dist < ra ) { speedA += speed[j]  * wa; countA++; }
-			if (dist < rc ) { speedC += direction * wc; countC++; }
+			if (dist < rs ) { speedS -= direction; countS++; }
+			if (dist < ra ) { speedA += speed[j] ; countA++; }
+			if (dist < rc ) { speedC += direction; countC++; }
 		}
 		speedC = countC>0?speedC/countC:speedC;
 		speedA = countA>0?speedA/countA:speedA;
 		speedS = countS>0?speedS/countS:speedS;
 
-
-		speedIncrement[i] = speedC+speedA+speedS;
+		speedIncrement[i] =
+            wc*speedC+
+            wa*speedA+
+            ws*speedS;
     }
 
     // apply the speed increment

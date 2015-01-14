@@ -112,7 +112,7 @@ void Simulator::virtualTransmission()
             int rank = getRank(grid_position + glm::ivec3(x,y,z)); 
             if ( rank != mpi_rank )
             {
-                MPI_Irecv(&buffer[bufferPosition], 6 , MPI_DOUBLE, rank, 0 , MPI_COMM_WORLD, &sendReq[2*bufferPosition]);
+                MPI_Irecv(&buffer[2*bufferPosition], 6 , MPI_DOUBLE, rank, 0 , MPI_COMM_WORLD, &sendReq[bufferPosition]);
             }
             ++bufferPosition;
         }
@@ -137,13 +137,13 @@ void Simulator::virtualTransmission()
                 //static_cast<glm::dvec3>(buffer[0]) = meanPosition;
                 //static_cast<glm::dvec3>(buffer[3]) = meanSpeed;
                 MPI_Send(buffer, 6, MPI_DOUBLE, rank, 0, MPI_COMM_WORLD);
-                std::cout << mpi_rank << " send to " << rank << " data = "
-                    << buffer[0] << " "
-                    << buffer[1] << " "
-                    << buffer[2] << " "
-                    << buffer[3] << " "
-                    << buffer[4] << " "
-                    << buffer[5] << std::endl;
+                //std::cout << mpi_rank << " send to " << rank << " data = "
+                    //<< buffer[0] << " "
+                    //<< buffer[1] << " "
+                    //<< buffer[2] << " "
+                    //<< buffer[3] << " "
+                    //<< buffer[4] << " "
+                    //<< buffer[5] << std::endl;
             }
             ++bufferPosition;
         }
@@ -160,13 +160,13 @@ void Simulator::virtualTransmission()
             if ( rank != mpi_rank )
             {
                 MPI_Wait(&sendReq[bufferPosition],&status);
-                std::cout << mpi_rank << " wait from " << rank << " data = "
-                    << buffer[bufferPosition*2  ].x << " "
-                    << buffer[bufferPosition*2  ].y << " "
-                    << buffer[bufferPosition*2  ].z << " "
-                    << buffer[bufferPosition*2+1].x << " "
-                    << buffer[bufferPosition*2+1].y << " "
-                    << buffer[bufferPosition*2+1].z << std::endl;
+                //std::cout << mpi_rank << " wait from " << rank << " data = "
+                    //<< buffer[bufferPosition*2  ].x << " "
+                    //<< buffer[bufferPosition*2  ].y << " "
+                    //<< buffer[bufferPosition*2  ].z << " "
+                    //<< buffer[bufferPosition*2+1].x << " "
+                    //<< buffer[bufferPosition*2+1].y << " "
+                    //<< buffer[bufferPosition*2+1].z << std::endl;
             }
             ++bufferPosition;
         }
@@ -192,55 +192,70 @@ void Simulator::oneStep()
 {
     computeVirtual();
     virtualTransmission();
+    compute();
+}
 
-    //// compute the speedIncrement
-    //for(int i = mpi_offset; i < mpi_offset + mpi_subsize; ++i)
-    //{
-		//glm::dvec3 speedA(0.0),speedS(0.0),speedC(0.0);
-		//double countA=0,countS=0,countC=0;
-		//for(int j = 0; j < agent; ++j)
-		//{
-			//if(i == j) continue;
-			//glm::dvec3 direction = position[j] - position[i];
-			//double dist = glm::length(direction);
+void Simulator::compute()
+{
+    // compute the speedIncrement
+    {
+        std::list<glm::dvec3>::iterator my_position,other_position, other_speed, my_speedIncrement;
 
-			//// separation/alignment/cohesion
-			//if (dist < rs ) { speedS -= direction * ws; countS++; }
-			//if (dist < ra ) { speedA += speed[j]  * wa; countA++; }
-			//if (dist < rc ) { speedC += direction * wc; countC++; }
-		//}
-		//speedC = countC>0?speedC/countC:speedC;
-		//speedA = countA>0?speedA/countA:speedA;
-		//speedS = countS>0?speedS/countS:speedS;
+        for(my_position = position.begin(), my_speedIncrement = speedIncrement.begin();
+            my_position != position.end(), my_speedIncrement != speedIncrement.end();
+            ++my_position,++my_speedIncrement)
+        {
+            glm::dvec3 speedA(0.0),speedS(0.0),speedC(0.0);
+            double countA=0,countS=0,countC=0;
+
+            for(other_position = position.begin(), other_speed = speed.begin();
+                other_position != position.end(), other_speed != speed.end();
+                ++my_position,++my_speedIncrement)
+            {
+                if ( other_position != my_position )
+                {
+                    glm::dvec3 direction = (*other_position) - (*my_position);
+                    double dist = glm::length(direction);
+
+                    // separation/alignment/cohesion
+                    if (dist < rs ) { speedS -= direction * ws; countS++; }
+                    if (dist < ra ) { speedA += (*other_speed)  * wa; countA++; }
+                    if (dist < rc ) { speedC += direction * wc; countC++; }
+
+                    speedC = countC>0?speedC/countC:speedC;
+                    speedA = countA>0?speedA/countA:speedA;
+                    speedS = countS>0?speedS/countS:speedS;
+                    
+                }
+
+            }
+
+            *my_speedIncrement = speedC+speedA+speedS;
+        }
+    }
 
 
-		//speedIncrement[i] = speedC+speedA+speedS;
-    //}
+    // apply the speed increment
+    {
+        std::list<glm::dvec3>::iterator my_position, my_speed, my_speedIncrement;
 
-    //// apply the speed increment
-    //for(int i = mpi_offset; i < mpi_offset + mpi_subsize; ++i)
-    //{
+        for(my_position = position.begin(), my_speed = speed.begin(), my_speedIncrement = speedIncrement.begin() ;
+            my_position != position.end(), my_speed != speed.end(), my_speedIncrement != speedIncrement.end() ;
+            ++my_position, ++my_speed, +my_speedIncrementedIncrement)
+        {
+            // increment the speed
+            *my_speed += *my_speedIncrement;
 
-		//speed[i] += speedIncrement[i];
+            // limit the speed
+            const double maxSpeed = 0.2;
+            double s = glm::length(*my_speed);
+            if (s>maxSpeed)
+                *my_speed *= maxSpeed/s;
 
-		//// limit the speed;
-		//const double maxSpeed = 0.2;
-		//double s = glm::length(speed[i]);
-		//if (s>maxSpeed)
-			//speed[i] *= maxSpeed/s;
-
-		//position[i] += speed[i];
-		//position[i] = glm::fract(position[i]);
-    //}
-
-    //// share the results
-    //for(int i = 0; i<mpi_size; ++i)
-    //{
-        //int offset,subsize;
-        //computeGroupDimension(i,offset,subsize);
-        //MPI_Bcast(&position[offset],subsize*3,MPI_DOUBLE,i,MPI_COMM_WORLD);
-        //MPI_Bcast(&speed[offset],subsize*3,MPI_DOUBLE,i,MPI_COMM_WORLD);
-    //}
+            *my_position += *my_speed;
+            *my_position = glm::frac(*position[i]);
+        }
+    }
 }
 
 void Simulator::save(const std::string& filename)

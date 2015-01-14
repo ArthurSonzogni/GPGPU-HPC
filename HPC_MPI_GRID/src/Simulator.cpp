@@ -34,16 +34,16 @@ Simulator::Simulator(
 glm::ivec3 Simulator::getGridPosition(int rank)
 {
     glm::ivec3 pos;
-    pos.z = rank/grid_size/grid_size;
-    pos.y = rank/grid_size%grid_size;
-    pos.x = rank%grid_size;
+    pos.z = (rank/grid_size)/grid_size;
+    pos.y = (rank/grid_size)%grid_size;
+    pos.x = (rank%grid_size);
     return pos;
 }
 int Simulator::getRank(const glm::ivec3 position)
 {
-    return position.x + grid_size*(
-           position.y + grid_size*(
-           position.z  ));
+    return (position.x + grid_size)%grid_size + grid_size*(
+           (position.y + grid_size)%grid_size + grid_size*(
+           (position.z + grid_size)%grid_size  ));
 }
 
 void Simulator::init()
@@ -54,6 +54,10 @@ void Simulator::init()
 
     // compute grid position
     grid_position = getGridPosition(mpi_rank);
+
+    // compute grid_max and grid_min
+    grid_min = glm::dvec3(grid_position ) / double(grid_size);
+    grid_max = glm::dvec3(grid_position + glm::ivec3(1,1,1)) / double(grid_size);
 
     // spawn agents
     int nbAgent = agent/grid_size/grid_size/grid_size;
@@ -67,6 +71,105 @@ void Simulator::init()
         position.push_back(pos);
         speed.push_back(glm::dvec3(0.0));
         speedIncrement.push_back(glm::dvec3(0.0));
+    }
+}
+
+void Simulator::computeVirtual()
+{
+    meanPosition = glm::dvec3(0.0);
+    meanSpeed = glm::dvec3(0.0);
+    double nbAgent = position.size();
+
+    if (nbAgent <= 0) return;
+
+    for(std::list<glm::dvec3>::iterator it = position.begin(); it != position.end(); ++it)
+    {
+       meanPosition +=  *it;
+    }
+
+    for(std::list<glm::dvec3>::iterator it = speed.begin(); it != speed.end(); ++it)
+    {
+       meanSpeed +=  *it;
+    }
+
+    meanPosition /= nbAgent;
+    meanSpeed /= nbAgent;
+}
+
+void Simulator::virtualTransmission()
+{
+    glm::dvec3 buffer[2*3*3*3];
+    MPI_Request sendReq[3*3*3];
+    MPI_Status status;
+
+    // reception
+    {
+        int bufferPosition = 0;
+        for(int x = -1 ; x <= 1 ; ++x )
+        for(int y = -1 ; y <= 1 ; ++y )
+        for(int z = -1 ; z <= 1 ; ++z )
+        {
+            int rank = getRank(grid_position + glm::ivec3(x,y,z)); 
+            if ( rank != mpi_rank )
+            {
+                MPI_Irecv(&buffer[bufferPosition], 6 , MPI_DOUBLE, rank, 0 , MPI_COMM_WORLD, &sendReq[2*bufferPosition]);
+            }
+            ++bufferPosition;
+        }
+    }
+    // envoie
+    {
+        int bufferPosition = 0;
+        for(int x = -1 ; x <= 1 ; ++x )
+        for(int y = -1 ; y <= 1 ; ++y )
+        for(int z = -1 ; z <= 1 ; ++z )
+        {
+            int rank = getRank(grid_position + glm::ivec3(x,y,z)); 
+            if ( rank != mpi_rank )
+            {
+                double buffer[6];
+                buffer[0] = meanPosition.x;
+                buffer[1] = meanPosition.y;
+                buffer[2] = meanPosition.z;
+                buffer[3] = meanSpeed.x;
+                buffer[4] = meanSpeed.y;
+                buffer[5] = meanSpeed.z;
+                //static_cast<glm::dvec3>(buffer[0]) = meanPosition;
+                //static_cast<glm::dvec3>(buffer[3]) = meanSpeed;
+                MPI_Send(buffer, 6, MPI_DOUBLE, rank, 0, MPI_COMM_WORLD);
+                std::cout << mpi_rank << " send to " << rank << " data = "
+                    << buffer[0] << " "
+                    << buffer[1] << " "
+                    << buffer[2] << " "
+                    << buffer[3] << " "
+                    << buffer[4] << " "
+                    << buffer[5] << std::endl;
+            }
+            ++bufferPosition;
+        }
+    }
+
+    // attente de reception
+    {
+        int bufferPosition = 0;
+        for(int x = -1 ; x <= 1 ; ++x )
+        for(int y = -1 ; y <= 1 ; ++y )
+        for(int z = -1 ; z <= 1 ; ++z )
+        {
+            int rank = getRank(grid_position + glm::ivec3(x,y,z)); 
+            if ( rank != mpi_rank )
+            {
+                MPI_Wait(&sendReq[bufferPosition],&status);
+                std::cout << mpi_rank << " wait from " << rank << " data = "
+                    << buffer[bufferPosition*2  ].x << " "
+                    << buffer[bufferPosition*2  ].y << " "
+                    << buffer[bufferPosition*2  ].z << " "
+                    << buffer[bufferPosition*2+1].x << " "
+                    << buffer[bufferPosition*2+1].y << " "
+                    << buffer[bufferPosition*2+1].z << std::endl;
+            }
+            ++bufferPosition;
+        }
     }
 }
 
@@ -87,69 +190,72 @@ void Simulator::run()
 
 void Simulator::oneStep()
 {
-    // compute the speedIncrement
-    for(int i = mpi_offset; i < mpi_offset + mpi_subsize; ++i)
-    {
-		glm::dvec3 speedA(0.0),speedS(0.0),speedC(0.0);
-		double countA=0,countS=0,countC=0;
-		for(int j = 0; j < agent; ++j)
-		{
-			if(i == j) continue;
-			glm::dvec3 direction = position[j] - position[i];
-			double dist = glm::length(direction);
+    computeVirtual();
+    virtualTransmission();
 
-			// separation/alignment/cohesion
-			if (dist < rs ) { speedS -= direction * ws; countS++; }
-			if (dist < ra ) { speedA += speed[j]  * wa; countA++; }
-			if (dist < rc ) { speedC += direction * wc; countC++; }
-		}
-		speedC = countC>0?speedC/countC:speedC;
-		speedA = countA>0?speedA/countA:speedA;
-		speedS = countS>0?speedS/countS:speedS;
+    //// compute the speedIncrement
+    //for(int i = mpi_offset; i < mpi_offset + mpi_subsize; ++i)
+    //{
+		//glm::dvec3 speedA(0.0),speedS(0.0),speedC(0.0);
+		//double countA=0,countS=0,countC=0;
+		//for(int j = 0; j < agent; ++j)
+		//{
+			//if(i == j) continue;
+			//glm::dvec3 direction = position[j] - position[i];
+			//double dist = glm::length(direction);
+
+			//// separation/alignment/cohesion
+			//if (dist < rs ) { speedS -= direction * ws; countS++; }
+			//if (dist < ra ) { speedA += speed[j]  * wa; countA++; }
+			//if (dist < rc ) { speedC += direction * wc; countC++; }
+		//}
+		//speedC = countC>0?speedC/countC:speedC;
+		//speedA = countA>0?speedA/countA:speedA;
+		//speedS = countS>0?speedS/countS:speedS;
 
 
-		speedIncrement[i] = speedC+speedA+speedS;
-    }
+		//speedIncrement[i] = speedC+speedA+speedS;
+    //}
 
-    // apply the speed increment
-    for(int i = mpi_offset; i < mpi_offset + mpi_subsize; ++i)
-    {
+    //// apply the speed increment
+    //for(int i = mpi_offset; i < mpi_offset + mpi_subsize; ++i)
+    //{
 
-		speed[i] += speedIncrement[i];
+		//speed[i] += speedIncrement[i];
 
-		// limit the speed;
-		const double maxSpeed = 0.2;
-		double s = glm::length(speed[i]);
-		if (s>maxSpeed)
-			speed[i] *= maxSpeed/s;
+		//// limit the speed;
+		//const double maxSpeed = 0.2;
+		//double s = glm::length(speed[i]);
+		//if (s>maxSpeed)
+			//speed[i] *= maxSpeed/s;
 
-		position[i] += speed[i];
-		position[i] = glm::fract(position[i]);
-    }
+		//position[i] += speed[i];
+		//position[i] = glm::fract(position[i]);
+    //}
 
-    // share the results
-    for(int i = 0; i<mpi_size; ++i)
-    {
-        int offset,subsize;
-        computeGroupDimension(i,offset,subsize);
-        MPI_Bcast(&position[offset],subsize*3,MPI_DOUBLE,i,MPI_COMM_WORLD);
-        MPI_Bcast(&speed[offset],subsize*3,MPI_DOUBLE,i,MPI_COMM_WORLD);
-    }
+    //// share the results
+    //for(int i = 0; i<mpi_size; ++i)
+    //{
+        //int offset,subsize;
+        //computeGroupDimension(i,offset,subsize);
+        //MPI_Bcast(&position[offset],subsize*3,MPI_DOUBLE,i,MPI_COMM_WORLD);
+        //MPI_Bcast(&speed[offset],subsize*3,MPI_DOUBLE,i,MPI_COMM_WORLD);
+    //}
 }
 
 void Simulator::save(const std::string& filename)
 {
-    std::ofstream file;
-    file.open(filename.c_str());
+    //std::ofstream file;
+    //file.open(filename.c_str());
 
-    for(int i = 0; i < agent; ++i)
-    {
-        file
-            << position[i].x << " "
-            << position[i].y << " "
-            << position[i].z
-            << std::endl;
-    }
+    //for(int i = 0; i < agent; ++i)
+    //{
+        //file
+            //<< position[i].x << " "
+            //<< position[i].y << " "
+            //<< position[i].z
+            //<< std::endl;
+    //}
 
-    file.close();
+    //file.close();
 }

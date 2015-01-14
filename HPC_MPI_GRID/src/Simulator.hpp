@@ -31,7 +31,6 @@ class Simulator
         // virtual data from this block
         glm::dvec3 meanPosition;
         glm::dvec3 meanSpeed;
-        int count
         
         // virtual boids from neighbours blocks
         std::list<glm::dvec3> virtualPosition;
@@ -39,6 +38,7 @@ class Simulator
 
         // programme phase
         void init();
+        void computeVirtual();
         void virtualTransmission();
         void compute();
         void outInTransmission();

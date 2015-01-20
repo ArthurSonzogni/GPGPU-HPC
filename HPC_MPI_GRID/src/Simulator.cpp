@@ -72,6 +72,9 @@ void Simulator::init()
         speed.push_back(glm::dvec3(0.0));
         speedIncrement.push_back(glm::dvec3(0.0));
     }
+
+    // compute Neighbour Rank
+    computeNeibourRank();
 }
 
 void Simulator::computeVirtual()
@@ -109,7 +112,7 @@ void Simulator::virtualTransmission()
         for(int y = -1 ; y <= 1 ; ++y )
         for(int z = -1 ; z <= 1 ; ++z )
         {
-            int rank = getRank(grid_position + glm::ivec3(x,y,z)); 
+            int rank = neighbourRank[x+1][y+1][z+1];
             if ( rank != mpi_rank )
             {
                 MPI_Irecv(&buffer[2*bufferPosition], 6 , MPI_DOUBLE, rank, 0 , MPI_COMM_WORLD, &sendReq[bufferPosition]);
@@ -124,7 +127,7 @@ void Simulator::virtualTransmission()
         for(int y = -1 ; y <= 1 ; ++y )
         for(int z = -1 ; z <= 1 ; ++z )
         {
-            int rank = getRank(grid_position + glm::ivec3(x,y,z)); 
+            int rank = neighbourRank[x+1][y+1][z+1];
             if ( rank != mpi_rank )
             {
                 double buffer[6];
@@ -151,7 +154,7 @@ void Simulator::virtualTransmission()
         for(int y = -1 ; y <= 1 ; ++y )
         for(int z = -1 ; z <= 1 ; ++z )
         {
-            int rank = getRank(grid_position + glm::ivec3(x,y,z)); 
+            int rank = neighbourRank[x+1][y+1][z+1];
             if ( rank != mpi_rank )
             {
                 MPI_Wait(&sendReq[bufferPosition],&status);
@@ -183,6 +186,7 @@ void Simulator::oneStep()
     computeVirtual();
     virtualTransmission();
     compute();
+    outInTransmission();
 }
 
 void Simulator::compute()
@@ -259,6 +263,7 @@ void Simulator::outInTransmission()
 
     std::list<glm::dvec3>::iterator my_position, my_speed;
 
+    // detect outter
     for(my_position = position.begin(), my_speed = speed.begin() ;
         my_position != position.end() ;)
     {
@@ -268,6 +273,7 @@ void Simulator::outInTransmission()
             glm::ivec3 d = ipos - grid_position + glm::ivec3(1,1,1);
             d = glm::min(d,glm::ivec3(0,0,0));
             d = glm::max(d,glm::ivec3(2,2,2));
+
             outPosition[d.x][d.y][d.z].push_back( *my_position );
             outPosition[d.x][d.y][d.z].push_back( *my_speed );
 
@@ -281,21 +287,143 @@ void Simulator::outInTransmission()
         }
     }
 
+    // reservation de buffer pour la reception
+    int inDimension[3][3][3];
+    std::vector<glm::dvec3> inPosition[3][3][3];
+    std::vector<glm::dvec3> inSpeed[3][3][3];
+
+    // MPI request/status
+    MPI_Request sendReq[3][3][3];
+    MPI_Status status;
+
+    // reception de la dimension
+    {
+        for(int x = 0 ; x <= 2 ; ++x )
+        for(int y = 0 ; y <= 2 ; ++y )
+        for(int z = 0 ; z <= 2 ; ++z )
+        {
+            int rank = neighbourRank[x][y][z];
+            if ( rank != mpi_rank )
+            {
+                MPI_Irecv(&inDimension[x][y][z], 1 , MPI_INT, rank, 0 , MPI_COMM_WORLD, &sendReq[x][y][z]);
+            }
+        }
+    }
+
+    // envoie de la dimension
+    {
+        for(int x = 0 ; x <= 2 ; ++x )
+        for(int y = 0 ; y <= 2 ; ++y )
+        for(int z = 0 ; z <= 2 ; ++z )
+        {
+            int rank = neighbourRank[x][y][z];
+            if ( rank != mpi_rank )
+            {
+                int sendBuffer = outPosition[x][y][z].size();
+                MPI_Send(&sendBuffer, 1, MPI_INT, rank, 0, MPI_COMM_WORLD);
+                std::cout << mpi_rank << " send " << sendBuffer << " boids to " << rank << std::endl;
+            }
+        }
+    }
+
+    // attente de reception
+    {
+        virtualPosition.clear();
+        virtualSpeed.clear();
+        
+        for(int x = 0 ; x <= 2 ; ++x )
+        for(int y = 0 ; y <= 2 ; ++y )
+        for(int z = 0 ; z <= 2 ; ++z )
+        {
+            int rank = neighbourRank[x][y][z];
+            if ( rank != mpi_rank )
+            {
+                MPI_Wait(&sendReq[x][y][z],&status);
+                std::cout << mpi_rank << " receive " << inDimension[x][y][z] << " boids  from " << rank << std::endl;
+            }
+        }
+    }
+
+    // reception des boids
+    //{
+        //int bufferPosition = 0;
+        //for(int x = 0 ; x <= 2 ; ++x )
+        //for(int y = 0 ; y <= 2 ; ++y )
+        //for(int z = 0 ; z <= 2 ; ++z )
+        //{
+            //int rank = neighbourRank[x][y][z];
+            //if ( rank != mpi_rank )
+            //{
+                //in
+                //MPI_Irecv(&inDimension[x][y][z], 1 , MPI_INT, rank, 0 , MPI_COMM_WORLD, &sendReq[x][y][z]);
+            //}
+        //}
+    //}
+
+    //// envoie de la dimension
+    //{
+        //for(int x = 0 ; x <= 2 ; ++x )
+        //for(int y = 0 ; y <= 2 ; ++y )
+        //for(int z = 0 ; z <= 2 ; ++z )
+        //{
+            //int rank = getRank(grid_position + glm::ivec3(x-1,y-1,z-1)); 
+            //if ( rank != mpi_rank )
+            //{
+                //int sendBuffer = outPosition[x][y][z].size();
+                //MPI_Send(&sendBuffer, 1, MPI_INT, rank, 0, MPI_COMM_WORLD);
+                //std::cout << mpi_rank << " send " << sendBuffer << " boids to " << rank << std::endl;
+            //}
+        //}
+    //}
+
+    //// attente de reception
+    //{
+        //virtualPosition.clear();
+        //virtualSpeed.clear();
+        
+        //for(int x = 0 ; x <= 2 ; ++x )
+        //for(int y = 0 ; y <= 2 ; ++y )
+        //for(int z = 0 ; z <= 2 ; ++z )
+        //{
+            //int rank = getRank(grid_position + glm::ivec3(x-1,y-1,z-1)); 
+            //if ( rank != mpi_rank )
+            //{
+                //MPI_Wait(&sendReq[x][y][z],&status);
+                //std::cout << mpi_rank << " receive " << inDimension[x][y][z] << " boids  from " << rank << std::endl;
+            //}
+        //}
+    //}
+
+    std::cout << "This is the end for me : " << mpi_rank << std::endl;
+    exit(0);
 }
 
 void Simulator::save(const std::string& filename)
 {
-    //std::ofstream file;
-    //file.open(filename.c_str());
+    if (mpi_rank == 0 and write)
+    {
+        std::ofstream file;
+        file.open(filename.c_str());
 
-    //for(int i = 0; i < agent; ++i)
-    //{
-        //file
-            //<< position[i].x << " "
-            //<< position[i].y << " "
-            //<< position[i].z
-            //<< std::endl;
-    //}
+        for(std::list<glm::dvec3>::iterator p = position.begin(); p != position.end(); ++p)
+        {
+            file
+                << (*p).x << " "
+                << (*p).y << " "
+                << (*p).z
+                << std::endl;
+        }
 
-    //file.close();
+        file.close();
+    }
+}
+
+void Simulator::computeNeibourRank()
+{
+    for(int x = 0 ; x <= 2 ; ++x )
+    for(int y = 0 ; y <= 2 ; ++y )
+    for(int z = 0 ; z <= 2 ; ++z )
+    {
+        neighbourRank[x][y][z] = getRank(grid_position + glm::ivec3(x-1,y-1,z-1)); 
+    }
 }

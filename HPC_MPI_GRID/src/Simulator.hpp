@@ -46,6 +46,8 @@ class Simulator
         // mpi data
         int mpi_rank;
         int mpi_size;
+        int neighbourRank[3][3][3];
+        void computeNeibourRank();
 
         glm::ivec3 grid_position;
         glm::dvec3 grid_min;

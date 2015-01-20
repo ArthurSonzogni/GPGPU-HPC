@@ -15,6 +15,7 @@ class CommandArguments
         void parse(int argc, const char *argv[]);
         void setDefault(const std::string& name, const std::string& value);
         std::string print();
+        void loadDefault();
         
         // argument access
         template<class T>

@@ -26,3 +26,16 @@ std::string CommandArguments::print()
     }
     return value;
 }
+
+void CommandArguments::loadDefault()
+{
+    setDefault("agents", "640");
+    setDefault("steps", "500");
+    setDefault("wc", "0.6");
+    setDefault("wa", "2");
+    setDefault("ws", "2");
+    setDefault("rc", "0.23");
+    setDefault("ra", "0.07");
+    setDefault("rs", "0.05");
+    setDefault("write", "0");
+}

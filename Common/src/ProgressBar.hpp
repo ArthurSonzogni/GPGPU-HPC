@@ -6,6 +6,7 @@ class ProgressBar
     public:
         ProgressBar();
         void update(float ratio);
+		~ProgressBar();
     private:
         int previousPercent;
 };

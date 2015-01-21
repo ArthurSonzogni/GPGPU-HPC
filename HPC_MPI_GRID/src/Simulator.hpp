@@ -28,16 +28,21 @@ class Simulator
             glm::dvec3 speed;
         };
 
+        struct BoidWeight
+        {
+            Boid boid;
+            double weight;
+        };
+
         // boids
         std::list<Boid> boids;
         std::list<glm::dvec3> speedIncrement;
 
         // virtual data from this block
-        Boid mean;
+        BoidWeight mean;
         
         // virtual boids from neighbours blocks
-        std::list<Boid> virtualBoids;
-        std::list<double> virtualWeight;
+        std::list<BoidWeight> virtualBoids;
 
         // programme phase
         void init();

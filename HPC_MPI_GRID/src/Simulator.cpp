@@ -63,13 +63,14 @@ void Simulator::init()
     int nbAgent = agent/grid_size/grid_size/grid_size;
     for(int i = 0; i < nbAgent; ++i)
     {
+        Boid b;
         double x = randDouble();
         double y = randDouble();
         double z = randDouble();
-        glm::dvec3 pos = grid_min + (grid_max-grid_min)*(glm::dvec3(x,y,z));
+        b.position = grid_min + (grid_max-grid_min)*(glm::dvec3(x,y,z));
+        b.speed = glm::dvec3(0.0);
 
-        position.push_back(pos);
-        speed.push_back(glm::dvec3(0.0));
+        boids.push_back(b);
         speedIncrement.push_back(glm::dvec3(0.0));
     }
 
@@ -79,87 +80,70 @@ void Simulator::init()
 
 void Simulator::computeVirtual()
 {
-    mean.position = glm::dvec3(0.0);
-    mean.speed = glm::dvec3(0.0);
-    double nbAgent = position.size();
+    mean.boid.position = glm::dvec3(0.0);
+    mean.boid.speed = glm::dvec3(0.0);
+    double nbAgent = boids.size();
+    mean.weight = nbAgent;
 
     if (nbAgent <= 0) return;
 
     for(std::list<Boid>::iterator it = boids.begin(); it != boids.end(); ++it)
     {
-        mean.position += it->position;
-        mean.speed += it->speed;
+        mean.boid.position += it->position;
+        mean.boid.speed += it->speed;
     }
 
-    mean.position /= nbAgent;
-    mean.speed /= nbAgent;
+    mean.boid.position /= nbAgent;
+    mean.boid.speed /= nbAgent;
 }
 
 void Simulator::virtualTransmission()
 {
-    glm::dvec3 buffer[2*3*3*3];
-    MPI_Request sendReq[3*3*3];
+    BoidWeight in[3][3][3];
+    MPI_Request sendReq[3][3][3];
     MPI_Status status;
 
     // reception
     {
-        int bufferPosition = 0;
-        for(int x = -1 ; x <= 1 ; ++x )
-        for(int y = -1 ; y <= 1 ; ++y )
-        for(int z = -1 ; z <= 1 ; ++z )
+        for(int x = 0 ; x <= 2 ; ++x )
+        for(int y = 0 ; y <= 2 ; ++y )
+        for(int z = 0 ; z <= 2 ; ++z )
         {
-            int rank = neighbourRank[x+1][y+1][z+1];
+            int rank = neighbourRank[x][y][z];
             if ( rank != mpi_rank )
             {
-                MPI_Irecv(&buffer[2*bufferPosition], 6 , MPI_DOUBLE, rank, 0 , MPI_COMM_WORLD, &sendReq[bufferPosition]);
+                MPI_Irecv(&in[x][y][z], 7 , MPI_DOUBLE, rank, 0 , MPI_COMM_WORLD, &sendReq[x][y][z]);
             }
-            ++bufferPosition;
         }
     }
     // envoie
     {
-        int bufferPosition = 0;
-        for(int x = -1 ; x <= 1 ; ++x )
-        for(int y = -1 ; y <= 1 ; ++y )
-        for(int z = -1 ; z <= 1 ; ++z )
+        for(int x = 0 ; x <= 2 ; ++x )
+        for(int y = 0 ; y <= 2 ; ++y )
+        for(int z = 0 ; z <= 2 ; ++z )
         {
-            int rank = neighbourRank[x+1][y+1][z+1];
+            int rank = neighbourRank[x][y][z];
             if ( rank != mpi_rank )
             {
-                double buffer[6];
-                
-                buffer[0] = mean.position.x;
-                buffer[1] = mean.position.y;
-                buffer[2] = mean.position.z;
-                buffer[3] = mean.speed.x;
-                buffer[4] = mean.speed.y;
-                buffer[5] = mean.speed.z;
-                MPI_Send(buffer, 6, MPI_DOUBLE, rank, 0, MPI_COMM_WORLD);
+                MPI_Send(&mean, 7, MPI_DOUBLE, rank, 0, MPI_COMM_WORLD);
             }
-            ++bufferPosition;
         }
     }
 
     // attente de reception
     {
-        virtualPosition.clear();
-        virtualSpeed.clear();
+        virtualBoids.clear();
         
-        int bufferPosition = 0;
-        for(int x = -1 ; x <= 1 ; ++x )
-        for(int y = -1 ; y <= 1 ; ++y )
-        for(int z = -1 ; z <= 1 ; ++z )
+        for(int x = 0 ; x <= 2 ; ++x )
+        for(int y = 0 ; y <= 2 ; ++y )
+        for(int z = 0 ; z <= 2 ; ++z )
         {
-            int rank = neighbourRank[x+1][y+1][z+1];
+            int rank = neighbourRank[x][y][z];
             if ( rank != mpi_rank )
             {
-                MPI_Wait(&sendReq[bufferPosition],&status);
-                Boid newBoid;
-                newBoid.position = buffer[2*bufferPosition];
-                newBoid.speed = buffer[2*bufferPosition + 1];
-                virtualBoids.push_back(newBoid);
+                MPI_Wait(&sendReq[x][y][z],&status);
+                virtualBoids.push_back(in[x][y][z]);
             }
-            ++bufferPosition;
         }
     }
 }
@@ -190,17 +174,18 @@ void Simulator::oneStep()
 void Simulator::compute()
 {
     std::list<Boid>::iterator my_boid,other_boid;
-    std::list<glm::dvec3> my_speed_increment
+    std::list<glm::dvec3>::iterator my_speed_increment;
+
     // compute the speedIncrement
     {
-        for(my_boid = boid.begin(), my_speed_increment = speedIncrement.begin();
-            my_boid = boid.end(), my_speed_increment = speedIncrement.end();
+        for(my_boid = boids.begin(), my_speed_increment = speedIncrement.begin();
+            my_boid != boids.end();
             ++my_boid, ++my_speed_increment)
         {
             glm::dvec3 speedA(0.0),speedS(0.0),speedC(0.0);
             double countA=0,countS=0,countC=0;
 
-            for(other_boid = boid.begin(); other_boid = boid.end(); ++other_boid)
+            for(other_boid = boids.begin(); other_boid != boids.end(); ++other_boid)
             {
                 if ( other_boid != my_boid )
                 {
@@ -218,34 +203,30 @@ void Simulator::compute()
             speedA = countA>0?speedA/countA:speedA;
             speedS = countS>0?speedS/countS:speedS;
 
-            *my_speedIncrement =
+            *my_speed_increment =
                 wc*speedC+
                 wa*speedA+
                 ws*speedS;
-            // TODO from HERE (TODO)
         }
     }
 
 
     // apply the speed increment
     {
-        std::list<glm::dvec3>::iterator my_position, my_speed, my_speedIncrement;
-
-        for(my_position = position.begin(), my_speed = speed.begin(), my_speedIncrement = speedIncrement.begin() ;
-            my_position != position.end() ;
-            ++my_position, ++my_speed, ++my_speedIncrement)
+        for(my_boid = boids.begin(), my_speed_increment = speedIncrement.begin();
+            my_boid != boids.end();
+            ++my_boid, ++my_speed_increment)
         {
             // increment the speed
-            *my_speed += *my_speedIncrement;
+            my_boid->speed += *my_speed_increment;
 
             // limit the speed
             const double maxSpeed = 0.2;
-            double s = glm::length(*my_speed);
+            double s = glm::length(my_boid->speed);
             if (s>maxSpeed)
-                *my_speed *= maxSpeed/s;
+                my_boid->speed *= maxSpeed/s;
 
-            *my_position += *my_speed;
-            *my_position = glm::fract(*my_position);
+            my_boid->position += my_boid->speed;
         }
     }
 }
@@ -253,39 +234,32 @@ void Simulator::compute()
 void Simulator::outInTransmission()
 {
     // extraction des sorties
-    std::vector<glm::dvec3> outPosition[3][3][3];
-    std::vector<glm::dvec3> outSpeed[3][3][3];
+    std::vector<Boid> out[3][3][3];
 
-    std::list<glm::dvec3>::iterator my_position, my_speed;
+    std::list<Boid>::iterator my_boid;
 
     // detect outter
-    for(my_position = position.begin(), my_speed = speed.begin() ;
-        my_position != position.end() ;)
+    for(my_boid = boids.begin(); my_boid != boids.end(); /* no increment */)
     {
-        glm::ivec3 ipos = glm::ivec3((*my_position) * double(grid_size));
+        glm::ivec3 ipos = glm::ivec3((my_boid->position) * double(grid_size));
         if ( ipos != grid_position )
         {
             glm::ivec3 d = ipos - grid_position + glm::ivec3(1,1,1);
             d = glm::min(d,glm::ivec3(0,0,0));
             d = glm::max(d,glm::ivec3(2,2,2));
 
-            outPosition[d.x][d.y][d.z].push_back( *my_position );
-            outPosition[d.x][d.y][d.z].push_back( *my_speed );
-
-            my_position = position.erase(my_position);
-            my_speed = speed.erase(my_speed);
+            out[d.x][d.y][d.z].push_back( *my_boid );
+            my_boid = boids.erase(my_boid);
         }
         else
         {
-            ++my_position;
-            ++my_speed;
+            ++my_boid;
         }
     }
 
     // reservation de buffer pour la reception
     int inDimension[3][3][3];
-    std::vector<glm::dvec3> inPosition[3][3][3];
-    std::vector<glm::dvec3> inSpeed[3][3][3];
+    std::vector<Boid> in[3][3][3];
 
     // MPI request/status
     MPI_Request sendReq[3][3][3];
@@ -314,7 +288,7 @@ void Simulator::outInTransmission()
             int rank = neighbourRank[x][y][z];
             if ( rank != mpi_rank )
             {
-                int sendBuffer = outPosition[x][y][z].size();
+                int sendBuffer = out[x][y][z].size();
                 MPI_Send(&sendBuffer, 1, MPI_INT, rank, 0, MPI_COMM_WORLD);
                 std::cout << mpi_rank << " send " << sendBuffer << " boids to " << rank << std::endl;
             }
@@ -323,8 +297,7 @@ void Simulator::outInTransmission()
 
     // attente de reception
     {
-        virtualPosition.clear();
-        virtualSpeed.clear();
+        virtualBoids.clear();
         
         for(int x = 0 ; x <= 2 ; ++x )
         for(int y = 0 ; y <= 2 ; ++y )
@@ -335,6 +308,7 @@ void Simulator::outInTransmission()
             {
                 MPI_Wait(&sendReq[x][y][z],&status);
                 std::cout << mpi_rank << " receive " << inDimension[x][y][z] << " boids  from " << rank << std::endl;
+                in[x][y][z].resize(inDimension[x][y][z]);
             }
         }
     }
@@ -400,12 +374,12 @@ void Simulator::save(const std::string& filename)
         std::ofstream file;
         file.open(filename.c_str());
 
-        for(std::list<glm::dvec3>::iterator p = position.begin(); p != position.end(); ++p)
+        for(std::list<Boid>::iterator p = boids.begin(); p !=  boids.end(); ++p)
         {
             file
-                << (*p).x << " "
-                << (*p).y << " "
-                << (*p).z
+                << p->position.x << " "
+                << p->position.y << " "
+                << p->position.z
                 << std::endl;
         }
 

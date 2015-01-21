@@ -100,7 +100,7 @@ void Simulator::computeVirtual()
 
 void Simulator::virtualTransmission()
 {
-    return;
+    //return;
     BoidWeight in[3][3][3];
     MPI_Request sendReq[3][3][3];
     MPI_Status status;
@@ -230,12 +230,15 @@ void Simulator::compute()
                 my_boid->speed *= maxSpeed/s;
 
             my_boid->position += my_boid->speed;
+            my_boid->position = glm::fract(my_boid->position);
         }
     }
 }
 
 void Simulator::outInTransmission()
 {
+    //return;
+
     // extraction des sorties
     std::vector<Boid> out[3][3][3];
 
@@ -248,8 +251,9 @@ void Simulator::outInTransmission()
         if ( ipos != grid_position )
         {
             glm::ivec3 d = ipos - grid_position + glm::ivec3(1,1,1);
-            d = glm::min(d,glm::ivec3(0,0,0));
-            d = glm::max(d,glm::ivec3(2,2,2));
+            d = glm::min(d,glm::ivec3(2,2,2));
+            d = glm::max(d,glm::ivec3(0,0,0));
+            //std::cout << d.x << " " << d.y << " " << d.z << "----" << std::endl;
 
             out[d.x][d.y][d.z].push_back( *my_boid );
             my_boid = boids.erase(my_boid);
@@ -260,6 +264,7 @@ void Simulator::outInTransmission()
         }
     }
 
+    //return;
 
     // reservation de buffer pour la reception
     int inDimension[3][3][3];
@@ -315,11 +320,7 @@ void Simulator::outInTransmission()
         }
     }
 
-    //std::cout << "================Before Barrier============" << std::endl;
-    MPI_Barrier(MPI_COMM_WORLD);
-    //std::cout << "================After============" << std::endl;
-
-
+    
     //reception des boids
     {
         for(int x = 0 ; x <= 2 ; ++x )
@@ -327,10 +328,11 @@ void Simulator::outInTransmission()
         for(int z = 0 ; z <= 2 ; ++z )
         {
             int rank = neighbourRank[x][y][z];
-            if ( rank != mpi_rank and in[x][y][z].size() )
+            if ( rank != mpi_rank and inDimension[x][y][z] )
             {
-                MPI_Irecv(&in[x][y][z],1, MPI_DOUBLE, rank, 0 , MPI_COMM_WORLD, &sendReq[x][y][z]);
-                std::cout << mpi_rank << " is receiving from " << rank << " : " << in[x][y][z].size() << std::endl;
+                //std::cout << mpi_rank << " is receiving from " << rank << " : " << inDimension[x][y][z] << std::endl;
+                MPI_Irecv(&(in[x][y][z][0]), 3*2*inDimension[x][y][z] , MPI_DOUBLE, rank, 0 , MPI_COMM_WORLD, &sendReq[x][y][z]);
+                //std::cout << inDimension[x][y][z] << std::endl;
             }
         }
     }
@@ -344,8 +346,8 @@ void Simulator::outInTransmission()
             int rank = neighbourRank[x][y][z];
             if ( rank != mpi_rank and out[x][y][z].size())
             {
-                MPI_Send(&(out[x][y][z]), 1, MPI_DOUBLE, rank, 0, MPI_COMM_WORLD);
-                std::cout << mpi_rank << " is sending to " << rank << " :  " << out[x][y][z].size() << std::endl;
+                //std::cout << mpi_rank << " is sending to " << rank << " :  " << out[x][y][z].size() << std::endl;
+                MPI_Send(&(out[x][y][z][0]), 3*2*out[x][y][z].size(), MPI_DOUBLE, rank, 0, MPI_COMM_WORLD);
             }
         }
     }
@@ -357,27 +359,21 @@ void Simulator::outInTransmission()
         for(int z = 0 ; z <= 2 ; ++z )
         {
             int rank = neighbourRank[x][y][z];
-            if ( rank != mpi_rank )
+            if ( rank != mpi_rank and inDimension[x][y][z])
             {
+                //std::cout << mpi_rank << " is waiting : " << rank << std::endl;
                 MPI_Wait(&sendReq[x][y][z],&status);
                 boids.insert(boids.end(),in[x][y][z].begin(),in[x][y][z].end());
-                //std::cout << mpi_rank << " is waiting : " << rank << std::endl;
             }
         }
     }
 
-    //std::cout << "================Before Barrier============" << std::endl;
-    MPI_Barrier(MPI_COMM_WORLD);
-    //std::cout << "================After============" << std::endl;
 
-    //while(1);
-    //std::cout << "This is the end for me : " << mpi_rank << std::endl;
-    //exit(0);
 }
 
 void Simulator::save(const std::string& filename)
 {
-    if (mpi_rank == 0 and write)
+    if (write)
     {
         std::ofstream file;
         file.open(filename.c_str());

@@ -79,24 +79,20 @@ void Simulator::init()
 
 void Simulator::computeVirtual()
 {
-    meanPosition = glm::dvec3(0.0);
-    meanSpeed = glm::dvec3(0.0);
+    mean.position = glm::dvec3(0.0);
+    mean.speed = glm::dvec3(0.0);
     double nbAgent = position.size();
 
     if (nbAgent <= 0) return;
 
-    for(std::list<glm::dvec3>::iterator it = position.begin(); it != position.end(); ++it)
+    for(std::list<Boid>::iterator it = boids.begin(); it != boids.end(); ++it)
     {
-       meanPosition +=  *it;
+        mean.position += it->position;
+        mean.speed += it->speed;
     }
 
-    for(std::list<glm::dvec3>::iterator it = speed.begin(); it != speed.end(); ++it)
-    {
-       meanSpeed +=  *it;
-    }
-
-    meanPosition /= nbAgent;
-    meanSpeed /= nbAgent;
+    mean.position /= nbAgent;
+    mean.speed /= nbAgent;
 }
 
 void Simulator::virtualTransmission()
@@ -132,12 +128,12 @@ void Simulator::virtualTransmission()
             {
                 double buffer[6];
                 
-                buffer[0] = meanPosition.x;
-                buffer[1] = meanPosition.y;
-                buffer[2] = meanPosition.z;
-                buffer[3] = meanSpeed.x;
-                buffer[4] = meanSpeed.y;
-                buffer[5] = meanSpeed.z;
+                buffer[0] = mean.position.x;
+                buffer[1] = mean.position.y;
+                buffer[2] = mean.position.z;
+                buffer[3] = mean.speed.x;
+                buffer[4] = mean.speed.y;
+                buffer[5] = mean.speed.z;
                 MPI_Send(buffer, 6, MPI_DOUBLE, rank, 0, MPI_COMM_WORLD);
             }
             ++bufferPosition;
@@ -158,8 +154,10 @@ void Simulator::virtualTransmission()
             if ( rank != mpi_rank )
             {
                 MPI_Wait(&sendReq[bufferPosition],&status);
-                virtualPosition.push_back(buffer[2*bufferPosition]);
-                virtualSpeed.push_back(buffer[2*bufferPosition+1]);
+                Boid newBoid;
+                newBoid.position = buffer[2*bufferPosition];
+                newBoid.speed = buffer[2*bufferPosition + 1];
+                virtualBoids.push_back(newBoid);
             }
             ++bufferPosition;
         }
@@ -191,43 +189,40 @@ void Simulator::oneStep()
 
 void Simulator::compute()
 {
+    std::list<Boid>::iterator my_boid,other_boid;
+    std::list<glm::dvec3> my_speed_increment
     // compute the speedIncrement
     {
-        std::list<glm::dvec3>::iterator my_position,other_position, other_speed, my_speedIncrement;
-
-        for(my_position = position.begin(), my_speedIncrement = speedIncrement.begin();
-            my_position != position.end();
-            ++my_position,++my_speedIncrement)
+        for(my_boid = boid.begin(), my_speed_increment = speedIncrement.begin();
+            my_boid = boid.end(), my_speed_increment = speedIncrement.end();
+            ++my_boid, ++my_speed_increment)
         {
             glm::dvec3 speedA(0.0),speedS(0.0),speedC(0.0);
             double countA=0,countS=0,countC=0;
 
-            for(other_position = position.begin(), other_speed = speed.begin();
-                other_position != position.end();
-                ++other_position,++other_speed)
+            for(other_boid = boid.begin(); other_boid = boid.end(); ++other_boid)
             {
-                if ( other_position != my_position )
+                if ( other_boid != my_boid )
                 {
-                    glm::dvec3 direction = (*other_position) - (*my_position);
+                    glm::dvec3 direction = other_boid->position - my_boid->position;
                     double dist = glm::length(direction);
 
                     // separation/alignment/cohesion
                     if (dist < rs ) { speedS -= direction; countS++; }
-                    if (dist < ra ) { speedA += (*other_speed); countA++; }
+                    if (dist < ra ) { speedA += other_boid->speed; countA++; }
                     if (dist < rc ) { speedC += direction; countC++; }
                 }
 
-                speedC = countC>0?speedC/countC:speedC;
-                speedA = countA>0?speedA/countA:speedA;
-                speedS = countS>0?speedS/countS:speedS;
-
-                *my_speedIncrement =
-                    wc*speedC+
-                    wa*speedA+
-                    ws*speedS;
             }
+            speedC = countC>0?speedC/countC:speedC;
+            speedA = countA>0?speedA/countA:speedA;
+            speedS = countS>0?speedS/countS:speedS;
 
-            *my_speedIncrement = speedC+speedA+speedS;
+            *my_speedIncrement =
+                wc*speedC+
+                wa*speedA+
+                ws*speedS;
+            // TODO from HERE (TODO)
         }
     }
 

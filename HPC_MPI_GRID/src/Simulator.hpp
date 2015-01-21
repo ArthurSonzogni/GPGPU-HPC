@@ -22,19 +22,22 @@ class Simulator
 
     private:
 
+        struct Boid
+        {
+            glm::dvec3 position;
+            glm::dvec3 speed;
+        };
 
         // boids
-        std::list<glm::dvec3> position;
-        std::list<glm::dvec3> speed;
+        std::list<Boid> boids;
         std::list<glm::dvec3> speedIncrement;
 
         // virtual data from this block
-        glm::dvec3 meanPosition;
-        glm::dvec3 meanSpeed;
+        Boid mean;
         
         // virtual boids from neighbours blocks
-        std::list<glm::dvec3> virtualPosition;
-        std::list<glm::dvec3> virtualSpeed;
+        std::list<Boid> virtualBoids;
+        std::list<double> virtualWeight;
 
         // programme phase
         void init();

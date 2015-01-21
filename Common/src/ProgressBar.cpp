@@ -8,6 +8,11 @@ ProgressBar::ProgressBar():
     
 }
 
+ProgressBar::~ProgressBar()
+{
+	std::cout << std::endl;
+}
+
 void ProgressBar::update(float ratio)
 {
     if (int(ratio*100)>previousPercent)

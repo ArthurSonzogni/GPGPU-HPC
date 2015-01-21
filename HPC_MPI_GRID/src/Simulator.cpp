@@ -4,6 +4,7 @@
 #include "ProgressBar.hpp"
 #include <fstream>
 #include <sstream>
+#include <algorithm>
 
 #include <mpi.h>
 
@@ -233,6 +234,7 @@ void Simulator::compute()
 
 void Simulator::outInTransmission()
 {
+    return ;
     // extraction des sorties
     std::vector<Boid> out[3][3][3];
 
@@ -313,58 +315,56 @@ void Simulator::outInTransmission()
         }
     }
 
-    // reception des boids
-    //{
-        //int bufferPosition = 0;
-        //for(int x = 0 ; x <= 2 ; ++x )
-        //for(int y = 0 ; y <= 2 ; ++y )
-        //for(int z = 0 ; z <= 2 ; ++z )
-        //{
-            //int rank = neighbourRank[x][y][z];
-            //if ( rank != mpi_rank )
-            //{
-                //in
-                //MPI_Irecv(&inDimension[x][y][z], 1 , MPI_INT, rank, 0 , MPI_COMM_WORLD, &sendReq[x][y][z]);
-            //}
-        //}
-    //}
+    /////////////////
+    ////////////////
 
-    //// envoie de la dimension
-    //{
-        //for(int x = 0 ; x <= 2 ; ++x )
-        //for(int y = 0 ; y <= 2 ; ++y )
-        //for(int z = 0 ; z <= 2 ; ++z )
-        //{
-            //int rank = getRank(grid_position + glm::ivec3(x-1,y-1,z-1)); 
-            //if ( rank != mpi_rank )
-            //{
-                //int sendBuffer = outPosition[x][y][z].size();
-                //MPI_Send(&sendBuffer, 1, MPI_INT, rank, 0, MPI_COMM_WORLD);
+    //reception des boids
+    {
+        for(int x = 0 ; x <= 2 ; ++x )
+        for(int y = 0 ; y <= 2 ; ++y )
+        for(int z = 0 ; z <= 2 ; ++z )
+        {
+            int rank = neighbourRank[x][y][z];
+            if ( rank != mpi_rank )
+            {
+                MPI_Irecv(&in[x][y][z],2*3*in[x][y][z].size(), MPI_DOUBLE, rank, 0 , MPI_COMM_WORLD, &sendReq[x][y][z]);
+            }
+        }
+    }
+
+    // envoie des boids
+    {
+        for(int x = 0 ; x <= 2 ; ++x )
+        for(int y = 0 ; y <= 2 ; ++y )
+        for(int z = 0 ; z <= 2 ; ++z )
+        {
+            int rank = neighbourRank[x][y][z];
+            if ( rank != mpi_rank )
+            {
+                MPI_Send(&out[x][y][z], 2*3*out[x][y][z].size(), MPI_DOUBLE, rank, 0, MPI_COMM_WORLD);
                 //std::cout << mpi_rank << " send " << sendBuffer << " boids to " << rank << std::endl;
-            //}
-        //}
-    //}
+            }
+        }
+    }
 
-    //// attente de reception
-    //{
-        //virtualPosition.clear();
-        //virtualSpeed.clear();
-        
-        //for(int x = 0 ; x <= 2 ; ++x )
-        //for(int y = 0 ; y <= 2 ; ++y )
-        //for(int z = 0 ; z <= 2 ; ++z )
-        //{
-            //int rank = getRank(grid_position + glm::ivec3(x-1,y-1,z-1)); 
-            //if ( rank != mpi_rank )
-            //{
-                //MPI_Wait(&sendReq[x][y][z],&status);
-                //std::cout << mpi_rank << " receive " << inDimension[x][y][z] << " boids  from " << rank << std::endl;
-            //}
-        //}
-    //}
+    // attente de reception
+    {
+        for(int x = 0 ; x <= 2 ; ++x )
+        for(int y = 0 ; y <= 2 ; ++y )
+        for(int z = 0 ; z <= 2 ; ++z )
+        {
+            int rank = neighbourRank[x][y][z];
+            if ( rank != mpi_rank )
+            {
+                MPI_Wait(&sendReq[x][y][z],&status);
+                boids.insert(boids.end(),in[x][y][z].begin(),in[x][y][z].end());
+            }
+        }
+    }
 
-    std::cout << "This is the end for me : " << mpi_rank << std::endl;
-    exit(0);
+
+    //std::cout << "This is the end for me : " << mpi_rank << std::endl;
+    //exit(0);
 }
 
 void Simulator::save(const std::string& filename)

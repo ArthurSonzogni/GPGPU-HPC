@@ -40,8 +40,16 @@ Simulator::Simulator(
 
 void Simulator::init()
 {
-	// Grid size TODO
-	gridSize = 4;
+	float maxRadius = std::max(std::max(ra,rs),rc);
+	gridSize = 1;
+	cellSize = 1.0;
+	// TODO Modify the kernel to allow more than 512 cells
+	while(cellSize > maxRadius && gridSize <= 8)
+	{
+		gridSize += 1;
+		cellSize = (float)1/gridSize;
+	}
+	gridSize -= 1;
 	cellSize = (float)1/gridSize;
 
 	// initialization initial position
@@ -124,6 +132,11 @@ void Simulator::oneStep()
     gridDim = (dataSize + blockDim - 1) / blockDim; 
 	updateSpeedPosition<<<blockDim,gridDim>>>(position_cuda, speed_cuda, speedIncrement_cuda, dataSize);
     gpuCheck(cudaGetLastError());
+
+	// updateList
+	gridDim = 1;
+	blockDim = gridSize*gridSize*gridSize;
+	updateLists<<<gridDim,blockDim>>>(cellFirst_cuda, cellLast_cuda, cellNeighbors_cuda, cellCount_cuda, cellDimension_cuda, cellSize, gridSize, position_cuda, boidNext_cuda, boidPrevious_cuda, boidCell_cuda, agent);
 }
 
 void Simulator::save(const std::string& filename)

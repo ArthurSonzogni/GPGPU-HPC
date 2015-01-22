@@ -207,3 +207,108 @@ __global__ void updateSpeedPosition(float *positions, float *speed, float *speed
 		index += blockDim.x*gridDim.x*blockDim.y*gridDim.y;
 	}
 }
+
+__global__ void updateLists(int *cellFirst, int *cellLast, int *cellNeighbors, int *cellCount, 
+							float *cellDimension, float cellSize, int gridSize, 
+							float *boidPosition, int *boidNext, int *boidPrevious, 
+							int *boidCell, int nbBoids)
+{
+	return;
+	// TODO : fix this method
+	int x = blockIdx.x * blockDim.x + threadIdx.x;
+	int y = blockIdx.y * blockDim.y + threadIdx.y;
+	int rank = x*blockDim.y*gridDim.y + y;
+	if(rank >= gridSize*gridSize*gridSize) return;
+
+	int cellPosition[3];
+	getGridPosition(rank, gridSize, cellPosition);
+
+	int currentIndex = cellFirst[rank];
+	while(currentIndex != -1)
+	{
+		float x = boidPosition[3*currentIndex+0];
+		float y = boidPosition[3*currentIndex+1];
+		float z = boidPosition[3*currentIndex+2];
+
+		// Prepare move
+		int newRankIndex = 0;
+		if(x > cellDimension[6*rank+0])
+			newRankIndex += 9;
+		if(x > cellDimension[6*rank+3])
+			newRankIndex += 9;
+		if(y > cellDimension[6*rank+1])
+			newRankIndex += 3;
+		if(y > cellDimension[6*rank+4])
+			newRankIndex += 3;
+		if(z > cellDimension[6*rank+2])
+			newRankIndex += 1;
+		if(z > cellDimension[6*rank+5])
+			newRankIndex += 1;
+		int newRank = cellNeighbors[newRankIndex];
+		if(newRank != rank)
+		{
+			// If currentIndex is the head of the list
+			if(cellFirst[rank] == currentIndex)
+			{
+				// Change the head
+				cellFirst[rank] = boidNext[currentIndex];
+				// If the head is not null, update its previous
+				if(cellFirst[rank] != -1)
+					boidPrevious[cellFirst[rank]] = -1;
+			}
+			// If currentIndex is the tail of the list
+			if(cellLast[rank] == currentIndex)
+			{
+				// Change the tail
+				cellLast[rank] = boidPrevious[currentIndex];
+				// If the tail is not null, update its next
+				if(cellLast[rank] != -1)
+					boidNext[cellLast[rank]] = -1;
+			}
+			// In every case
+			// If there is a previous, change its next
+			if(boidPrevious[currentIndex] != -1)
+				boidNext[boidPrevious[currentIndex]] = boidNext[currentIndex];
+			// If there is a next, change its previous
+			if(boidNext[currentIndex] != -1)
+				boidPrevious[boidNext[currentIndex]] = boidPrevious[currentIndex];
+		}
+		__syncthreads();
+
+		// Move, one direction at a time
+		for(int i = 0 ; i < 27 ; i++)
+		{
+			if(newRankIndex == i)
+			{
+				// If the list of the new cell is empty
+				if(cellFirst[newRank] == -1)
+				{
+					// Set the head of the list
+					cellFirst[newRank] = currentIndex;
+					// Set the next of the current
+					boidNext[currentIndex] = -1;
+					// Set the previous of the current
+					boidPrevious[currentIndex] = -1;
+					// Set the tail of the list
+					cellLast[newRank] = currentIndex;
+				}
+				// Else add in tail
+				else
+				{
+					// Update the next of the old tail
+					boidNext[cellLast[newRank]] = currentIndex;
+					// Set the previous of the current
+					boidPrevious[currentIndex] = cellLast[newRank];
+					// Set the next of the current
+					boidNext[currentIndex] = -1;
+					// Set the new tail
+					cellLast[newRank] = currentIndex;
+				}
+				boidCell[currentIndex] = newRank;
+			}
+			__syncthreads();
+		}
+
+		currentIndex = boidNext[currentIndex];
+	}
+}

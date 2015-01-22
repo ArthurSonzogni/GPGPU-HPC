@@ -12,6 +12,7 @@ select choix in \
    "HPC_MPI" \
    "HPC_MPI_GRID" \
    "GPGPU_simple"  \
+   "GPGPU_Grid"  \
    "Quitter"
 do
    case $REPLY in
@@ -20,7 +21,8 @@ do
       3) ./visualize.sh HPC_MPI ;;
       4) ./visualize.sh HPC_MPI_GRID ;;
       5) ./visualize.sh GPGPU_simple ;;
-      6) exit ;;
+      6) ./visualize.sh GPGPU_Grid ;;
+      7) exit ;;
       *) echo "Choix invalide"  ;;
    esac
 done

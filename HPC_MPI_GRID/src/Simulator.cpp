@@ -160,7 +160,7 @@ void Simulator::run()
         
         // print the result
         std::stringstream filename;
-        filename << "./output/boids_" << i << ".xyz";
+        filename << "./output/boids_" << i << "_" << mpi_rank << ".xyz";
         save(filename.str()); 
     }
 }

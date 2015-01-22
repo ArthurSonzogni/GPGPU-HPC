@@ -18,6 +18,13 @@ cmake -DRUN_ARGS="-write;1" .
 mkdir -p output
 make run
 
+# launch visualize hook
+if [ -f ./visualizeHook.sh ]
+then
+    echo "Executing visualise hook ..."
+    ./visualizeHook.sh
+fi
+
 # launch gnuplot
 cd $here
 mkdir -p output

@@ -61,18 +61,23 @@ void Simulator::init()
     grid_max = glm::dvec3(grid_position + glm::ivec3(1,1,1)) / double(grid_size);
 
     // spawn agents
-    int nbAgent = agent/grid_size/grid_size/grid_size;
-    for(int i = 0; i < nbAgent; ++i)
+    for(int i = 0; i < agent; ++i)
     {
-        Boid b;
         double x = randDouble();
         double y = randDouble();
         double z = randDouble();
-        b.position = grid_min + (grid_max-grid_min)*(glm::dvec3(x,y,z));
-        b.speed = glm::dvec3(0.0);
 
-        boids.push_back(b);
-        speedIncrement.push_back(glm::dvec3(0.0));
+        if (
+                x>grid_min.x and x<grid_max.x  and
+                y>grid_min.y and y<grid_max.y  and
+                z>grid_min.z and z<grid_max.z
+        ){
+            Boid b;
+            b.position = glm::dvec3(x,y,z);
+            b.speed = glm::dvec3(0,0,0);
+            boids.push_back(b);
+        }
+
     }
 
     // compute Neighbour Rank
@@ -100,7 +105,6 @@ void Simulator::computeVirtual()
 
 void Simulator::virtualTransmission()
 {
-    //return;
     BoidWeight in[3][3][3];
     MPI_Request sendReq[3][3][3];
     MPI_Status status;
@@ -167,7 +171,7 @@ void Simulator::run()
 
 void Simulator::oneStep()
 {
-    wa = 10.0;
+    //wa = 10.0; // TODO (REMOVE THIS IF YOU CAN)
     computeVirtual();
     virtualTransmission();
     compute();
@@ -177,6 +181,7 @@ void Simulator::oneStep()
 void Simulator::compute()
 {
     std::list<Boid>::iterator my_boid,other_boid;
+    std::list<BoidWeight>::iterator cell_boids;
     std::list<glm::dvec3>::iterator my_speed_increment;
 
     // compute the speedIncrement
@@ -188,6 +193,7 @@ void Simulator::compute()
             glm::dvec3 speedA(0.0),speedS(0.0),speedC(0.0);
             double countA=0,countS=0,countC=0;
 
+            // interation avec les boids de la cellule
             for(other_boid = boids.begin(); other_boid != boids.end(); ++other_boid)
             {
                 if ( other_boid != my_boid )
@@ -200,6 +206,20 @@ void Simulator::compute()
                     if (dist < ra ) { speedA += other_boid->speed; countA++; }
                     if (dist < rc ) { speedC += direction; countC++; }
                 }
+
+            }
+
+            // interaction avec les boids des cellules voisines
+            for(cell_boids = virtualBoids.begin(); cell_boids != virtualBoids.end(); ++cell_boids)
+            {
+                glm::dvec3 direction = cell_boids->boid.position - my_boid->position;
+                double dist = glm::length(direction);
+
+                double w = cell_boids->weight;
+                // separation/alignment/cohesion
+                if (dist < rs ) { speedS -= w*direction; countS+=w; }
+                if (dist < ra ) { speedA += w*cell_boids->boid.speed; countA+=w; }
+                if (dist < rc ) { speedC += w*direction; countC+=w; }
 
             }
             speedC = countC>0?speedC/countC:speedC;
@@ -224,7 +244,7 @@ void Simulator::compute()
             my_boid->speed += *my_speed_increment;
 
             // limit the speed
-            const double maxSpeed = 0.01;
+            const double maxSpeed = 0.08;
             double s = glm::length(my_boid->speed);
             if (s>maxSpeed)
                 my_boid->speed *= maxSpeed/s;

@@ -1,7 +1,7 @@
-cmake_minimum_required(VERSION 2.6)
+cmake_minimum_required(VERSION 2.8)
 
 # project name
-set(PROJECT_NAME HPC_MPI_GRID)
+set(PROJECT_NAME GPGPU_Grid)
 project(${PROJECT_NAME})
 
 # bin,src,common and include dir
@@ -10,7 +10,7 @@ set(SRC ${PROJECT_SOURCE_DIR}/src)
 set(COM ${PROJECT_SOURCE_DIR}/../Common/src)
 set(INC ${PROJECT_SOURCE_DIR}/../Common/include)
 
-# output dir under ./bin
+# executable under ./bin
 set(EXECUTABLE_OUTPUT_PATH ${BIN})
 
 # release build type by default
@@ -25,40 +25,46 @@ endif(NOT CMAKE_BUILD_TYPE)
 file(GLOB_RECURSE source_files ${SRC}/*)
 file(GLOB_RECURSE common_files ${COM}/*)
 
-# Finding libs
-find_package(MPI REQUIRED)
 
-add_executable(
+# Finding libs
+find_package(CUDA REQUIRED)
+
+# set some options
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wno-unused-parameter")
+set(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS} -O3 -ccbin g++ -arch=sm_12")
+
+
+cuda_add_executable(
     ${PROJECT_NAME}
     ${source_files}
     ${common_files}
 )
 
-
-
-# add OpenMPI flags
-set(CMAKE_CXX_COMPILE_FLAGS ${CMAKE_CXX_COMPILE_FLAGS} ${MPI_COMPILE_FLAGS})
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wno-reorder -Wno-unused-parameter")
-set(CMAKE_CXX_LINK_FLAGS ${CMAKE_CXX_LINK_FLAGS} ${MPI_LINK_FLAGS})
-
 # include
 include_directories(
     ${SRC}
-    ${MPI_INCLUDE_PATH}
     ${INC}
     ${COM}
 )
 
-# libs
-target_link_libraries(
-    ${PROJECT_NAME}
-    ${MPI_LIBRARIES}
+message(STATUS COM= ${COM})
+
+CUDA_INCLUDE_DIRECTORIES(
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${SRC}
+    ${INC}
+    ${COM}
 )
 
 
+# libs
+target_link_libraries(
+    ${PROJECT_NAME}
+)
+
 # command run
 add_custom_target(run
-    COMMAND ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} 27 --hostfile hostfile ${BIN}/${PROJECT_NAME} ${RUN_ARGS}
+    COMMAND ${BIN}/${PROJECT_NAME} ${RUN_ARGS}
     DEPENDS ${PROJECT_NAME}
     WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
 )

@@ -96,13 +96,10 @@ void Simulator::oneStep()
 		double s = glm::length(speed[i]);
 		if (s>maxSpeed)
 			speed[i] *= maxSpeed/s;
-	}
 
-	// sum the speed to the position (Euler intégration)
-	for(int i = 0; i < agent; ++i)
-	{
 		position[i] += speed[i];
 		position[i] = glm::fract(position[i]);
+
 	}
 }
 

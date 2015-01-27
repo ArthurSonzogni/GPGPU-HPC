@@ -172,10 +172,10 @@ void Simulator::run()
 void Simulator::oneStep()
 {
     //wa = 10.0; // TODO (REMOVE THIS IF YOU CAN)
-    computeVirtual();
-    virtualTransmission();
+    //computeVirtual();
+    //virtualTransmission();
     compute();
-    outInTransmission();
+    //outInTransmission();
 }
 
 void Simulator::compute()
@@ -183,6 +183,8 @@ void Simulator::compute()
     std::list<Boid>::iterator my_boid,other_boid;
     std::list<BoidWeight>::iterator cell_boids;
     std::list<glm::dvec3>::iterator my_speed_increment;
+
+    speedIncrement.resize(boids.size());
 
     // compute the speedIncrement
     {
@@ -192,6 +194,7 @@ void Simulator::compute()
         {
             glm::dvec3 speedA(0.0),speedS(0.0),speedC(0.0);
             double countA=0,countS=0,countC=0;
+
 
             // interation avec les boids de la cellule
             for(other_boid = boids.begin(); other_boid != boids.end(); ++other_boid)

@@ -33,9 +33,10 @@ int main(int argc, const char *argv[])
     float rc =  arguments.get<float>("rc");
     float ra =  arguments.get<float>("ra");
     float rs =  arguments.get<float>("rs");
+    float vmax =  arguments.get<float>("vmax");
     bool write = arguments.get<bool>("write");
 
-    Simulator simulator(agents,steps,wc,wa,ws,rc,ra,rs,write);
+    Simulator simulator(agents,steps,wc,wa,ws,rc,ra,rs,vmax,write);
     simulator.run();
     
     return 0;

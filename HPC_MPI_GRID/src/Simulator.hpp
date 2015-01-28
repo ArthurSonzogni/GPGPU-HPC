@@ -16,6 +16,7 @@ class Simulator
             int step,
             double wc, double wa, double ws,
             double rc, double ra, double rs,
+            double vmax,
             bool write);
 
         void run();
@@ -68,6 +69,7 @@ class Simulator
 
         int agent,step;
         double wc,wa,ws,rc,ra,rs;
+        double vmax;
         bool write;
 
         void oneStep();

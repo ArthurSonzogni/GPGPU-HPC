@@ -40,9 +40,10 @@ int main(int argc, const char *argv[])
     double rc =  arguments.get<double>("rc");
     double ra =  arguments.get<double>("ra");
     double rs =  arguments.get<double>("rs");
+    double vmax =  arguments.get<double>("vmax");
     bool write = arguments.get<bool>("write");
     
-    Simulator simulator(mpi_rank,mpi_size,agents,steps,wc,wa,ws,rc,ra,rs,write);
+    Simulator simulator(mpi_rank,mpi_size,agents,steps,wc,wa,ws,rc,ra,rs,vmax,write);
     simulator.run();
     MPI_Finalize();
     

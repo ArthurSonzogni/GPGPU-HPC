@@ -15,10 +15,12 @@ Simulator::Simulator(
     int step,
     double wc, double wa, double ws,
     double rc, double ra, double rs,
+    double vmax,
     bool write):
     agent(agent),step(step),
     wc(wc),wa(wa),ws(ws),
     rc(rc),ra(ra),rs(rs),
+    vmax(vmax),
     write(write)
 {
     init();
@@ -96,10 +98,9 @@ void Simulator::oneStep()
             speed[i] += speedIncrement[i];
 
             // limit the speed;
-            const double maxSpeed = 0.2;
             double s = glm::length(speed[i]);
-            if (s>maxSpeed)
-                speed[i] *= maxSpeed/s;
+            if (s>vmax)
+                speed[i] *= vmax/s;
         }
 
         #pragma omp barrier

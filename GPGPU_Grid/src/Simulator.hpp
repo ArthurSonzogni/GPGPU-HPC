@@ -12,6 +12,7 @@ class Simulator
             int step,
             float wc, float wa, float ws,
             float rc, float ra, float rs,
+            float vmax,
             bool write);
 
         void run();
@@ -38,6 +39,7 @@ class Simulator
 
         int agent,step;
         float wc,wa,ws,rc,ra,rs;
+        float vmax;
         bool write;
 
 		int gridSize;

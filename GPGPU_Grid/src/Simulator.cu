@@ -28,10 +28,12 @@ Simulator::Simulator(
 		int step,
 		float wc, float wa, float ws,
 		float rc, float ra, float rs,
+        float vmax,
         bool write):
 	agent(agent),step(step),
 	wc(wc),wa(wa),ws(ws),
 	rc(rc),ra(ra),rs(rs),
+    vmax(vmax),
     write(write)
 {
 	init();

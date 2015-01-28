@@ -20,12 +20,14 @@ Simulator::Simulator(
     int step,
     double wc, double wa, double ws,
     double rc, double ra, double rs,
+    double vmax,
     bool write):
     mpi_rank(mpi_rank),
     mpi_size(mpi_size),
     agent(agent),step(step),
     wc(wc),wa(wa),ws(ws),
     rc(rc),ra(ra),rs(rs),
+    vmax(vmax),
     write(write)
 {
     init();
@@ -247,10 +249,9 @@ void Simulator::compute()
             my_boid->speed += *my_speed_increment;
 
             // limit the speed
-            const double maxSpeed = 0.08;
             double s = glm::length(my_boid->speed);
-            if (s>maxSpeed)
-                my_boid->speed *= maxSpeed/s;
+            if (s>vmax)
+                my_boid->speed *= vmax/s;
 
             my_boid->position += my_boid->speed;
             my_boid->position = glm::fract(my_boid->position);

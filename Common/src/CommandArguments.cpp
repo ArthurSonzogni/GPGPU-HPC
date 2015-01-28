@@ -37,5 +37,6 @@ void CommandArguments::loadDefault()
     setDefault("rc", "0.23");
     setDefault("ra", "0.07");
     setDefault("rs", "0.05");
+    setDefault("vmax", "0.08");
     setDefault("write", "0");
 }

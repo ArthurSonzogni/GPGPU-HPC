@@ -35,12 +35,14 @@ Simulator::Simulator(
     int step,
     double wc, double wa, double ws,
     double rc, double ra, double rs,
+    double vmax,
     bool write):
     mpi_rank(mpi_rank),
     mpi_size(mpi_size),
     agent(agent),step(step),
     wc(wc),wa(wa),ws(ws),
     rc(rc),ra(ra),rs(rs),
+    vmax(vmax),
     write(write)
 {
     // compute the mpi_subsize
@@ -122,10 +124,9 @@ void Simulator::oneStep()
 		speed[i] += speedIncrement[i];
 
 		// limit the speed;
-		const double maxSpeed = 0.2;
 		double s = glm::length(speed[i]);
-		if (s>maxSpeed)
-			speed[i] *= maxSpeed/s;
+		if (s>vmax)
+			speed[i] *= vmax/s;
 
 		position[i] += speed[i];
 		position[i] = glm::fract(position[i]);

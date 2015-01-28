@@ -132,7 +132,7 @@ void Simulator::oneStep()
     dataSize = agent;
     cudaOccupancyMaxPotentialBlockSize(&minGridSize, &blockDim, initToZero, 0, dataSize);
     gridDim = (dataSize + blockDim - 1) / blockDim; 
-	updateSpeedPosition<<<blockDim,gridDim>>>(position_cuda, speed_cuda, speedIncrement_cuda, dataSize);
+	updateSpeedPosition<<<blockDim,gridDim>>>(position_cuda, speed_cuda, speedIncrement_cuda, dataSize, vmax);
     gpuCheck(cudaGetLastError());
 
 	// updateList

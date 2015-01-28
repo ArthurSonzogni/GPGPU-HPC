@@ -76,17 +76,19 @@ void Simulator::init()
 
 void Simulator::run()
 {
-    ProgressBar progressBar;
+    ProgressBar *progressBar = NULL;
+	if(mpi_rank == 0) progressBar = new ProgressBar;
     for(int i = 0; i < step; ++i)
     {
         oneStep();
-        if (mpi_rank == 0)  progressBar.update(i/double(step));
+        if (mpi_rank == 0)  progressBar->update(i/double(step));
         
         // print the result
         std::stringstream filename;
         filename << "./output/boids_" << i << ".xyz";
         save(filename.str()); 
     }
+	if(progressBar) delete progressBar;
 }
 
 void Simulator::oneStep()

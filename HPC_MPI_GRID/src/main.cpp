@@ -3,9 +3,11 @@
 #include "Simulator.hpp"
 #include <mpi.h>
 #include <cstdlib>
+#include <Timer.hpp>
 
 int main(int argc, const char *argv[])
 {
+	Timer chrono;
 	srand(0);
     char ** argvv = const_cast<char**>(argv);
     MPI_Init(&argc,&argvv);
@@ -42,8 +44,13 @@ int main(int argc, const char *argv[])
     double vmax =  arguments.get<double>("vmax");
     bool write = arguments.get<bool>("write");
     
+	if(mpi_rank == 0) chrono.start();
     Simulator simulator(mpi_rank,mpi_size,agents,steps,wc,wa,ws,rc,ra,rs,vmax,write);
+	if(mpi_rank == 0) chrono.display("Initialization");
+
+	if(mpi_rank == 0) chrono.start();
     simulator.run();
+	if(mpi_rank == 0) chrono.display("Simulation time");
     MPI_Finalize();
     
     return 0;

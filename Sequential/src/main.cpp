@@ -2,9 +2,11 @@
 #include <iostream>
 #include "Simulator.hpp"
 #include <cstdlib>
+#include <Timer.hpp>
 
 int main(int argc, const char *argv[])
 {
+	Timer chrono;
 	srand(0);
     CommandArguments arguments;
 
@@ -31,7 +33,9 @@ int main(int argc, const char *argv[])
     bool write = arguments.get<bool>("write");
 
     Simulator simulator(agents,steps,wc,wa,ws,rc,ra,rs,vmax,write);
+	chrono.start();
     simulator.run();
+	chrono.display("Simulation time");
     
     return 0;
 }

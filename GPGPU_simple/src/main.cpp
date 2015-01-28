@@ -1,9 +1,11 @@
 #include "CommandArguments.hpp"
 #include <iostream>
 #include "Simulator.hpp"
+#include <Timer.hpp>
 
 int main(int argc, const char *argv[])
 {
+	Timer chrono;
     CommandArguments arguments;
 
     // set arguments defaults values
@@ -29,7 +31,10 @@ int main(int argc, const char *argv[])
     bool write = arguments.get<bool>("write");
 
     Simulator simulator(agents,steps,wc,wa,ws,rc,ra,rs,vmax,write);
+
+	chrono.start();
     simulator.run();
+	chrono.display("Simulation");
     
     return 0;
 }

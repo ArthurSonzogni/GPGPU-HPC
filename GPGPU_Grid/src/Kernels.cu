@@ -178,7 +178,7 @@ __global__ void computeSpeedIncrement(	float *positions, float *speed, float *sp
 }
 
 __global__ void updateSpeedPosition(float *positions, float *speed, float *speedIncrement, 
-									int nbBoids)
+									int nbBoids, float vmax)
 {
 	int x = blockIdx.x * blockDim.x + threadIdx.x;
 	int y = blockIdx.y * blockDim.y + threadIdx.y;
@@ -188,7 +188,7 @@ __global__ void updateSpeedPosition(float *positions, float *speed, float *speed
 		speed[3*index] += speedIncrement[3*index];
 		speed[3*index+1] += speedIncrement[3*index+1];
 		speed[3*index+2] += speedIncrement[3*index+2];
-		float maxSpeed = 0.08;
+		float maxSpeed = vmax;
 		float s = sqrt(speed[3*index]*speed[3*index] + speed[3*index+1]*speed[3*index+1] + speed[3*index+2]*speed[3*index+2]);
 		if(s > maxSpeed)
 		{
@@ -206,6 +206,15 @@ __global__ void updateSpeedPosition(float *positions, float *speed, float *speed
 
 		index += blockDim.x*gridDim.x*blockDim.y*gridDim.y;
 	}
+}
+
+__device__ bool isInCell(float x, float y, float z, int rank, float *cellDimension)
+{
+	return (
+			x >= cellDimension[6*rank+0] && x <= cellDimension[6*rank+0] &&
+			y >= cellDimension[6*rank+1] && y <= cellDimension[6*rank+1] &&
+			z >= cellDimension[6*rank+2] && z <= cellDimension[6*rank+2]
+			);
 }
 
 __global__ void updateLists(int *cellFirst, int *cellLast, int *cellNeighbors, int *cellCount, 
@@ -226,20 +235,14 @@ __global__ void updateLists(int *cellFirst, int *cellLast, int *cellNeighbors, i
 		float z = boidPosition[3*currentIndex+2];
 
 		// Prepare move
-		int newRankIndex = 0;
-		if(x > cellDimension[6*rank+0])
-			newRankIndex += 9;
-		if(x > cellDimension[6*rank+3])
-			newRankIndex += 9;
-		if(y > cellDimension[6*rank+1])
-			newRankIndex += 3;
-		if(y > cellDimension[6*rank+4])
-			newRankIndex += 3;
-		if(z > cellDimension[6*rank+2])
-			newRankIndex += 1;
-		if(z > cellDimension[6*rank+5])
-			newRankIndex += 1;
-		int newRank = cellNeighbors[27*rank+newRankIndex];
+		int newRank = rank;
+		//int newRank = cellNeighbors[27*rank+newRankIndex];
+		for(int i = 0 ; i < 27 ; i++)
+		{
+			if(isInCell(x,y,z,cellNeighbors[27*rank+i], cellDimension))
+				newRank = cellNeighbors[27*rank+i];
+		}
+
 		if(newRank != rank)
 		{
 			// If currentIndex is the head of the list
@@ -273,7 +276,7 @@ __global__ void updateLists(int *cellFirst, int *cellLast, int *cellNeighbors, i
 		// Move, one direction at a time
 		for(int i = 0 ; i < 27 ; i++)
 		{
-			if(newRankIndex == i && newRank != rank)
+			if(newRank == cellNeighbors[27*rank+i] && newRank != rank)
 			{
 				// If the list of the new cell is empty
 				if(cellFirst[newRank] == -1)

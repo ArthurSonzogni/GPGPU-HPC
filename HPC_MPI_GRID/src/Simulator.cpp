@@ -173,11 +173,10 @@ void Simulator::run()
 
 void Simulator::oneStep()
 {
-    //wa = 10.0; // TODO (REMOVE THIS IF YOU CAN)
-    //computeVirtual();
-    //virtualTransmission();
+    computeVirtual();
+    virtualTransmission();
     compute();
-    //outInTransmission();
+    outInTransmission();
 }
 
 void Simulator::compute()
@@ -189,73 +188,69 @@ void Simulator::compute()
     speedIncrement.resize(boids.size());
 
     // compute the speedIncrement
+    int i = 0;
+    for(my_boid = boids.begin(), my_speed_increment = speedIncrement.begin();
+        my_boid != boids.end();
+        ++my_boid, ++my_speed_increment)
     {
-        for(my_boid = boids.begin(), my_speed_increment = speedIncrement.begin();
-            my_boid != boids.end();
-            ++my_boid, ++my_speed_increment)
+        glm::dvec3 speedA(0.0),speedS(0.0),speedC(0.0);
+        double countA=0,countS=0,countC=0;
+
+        // interation avec les boids de la cellule
+        for(other_boid = boids.begin(); other_boid != boids.end(); ++other_boid)
         {
-            glm::dvec3 speedA(0.0),speedS(0.0),speedC(0.0);
-            double countA=0,countS=0,countC=0;
-
-
-            // interation avec les boids de la cellule
-            for(other_boid = boids.begin(); other_boid != boids.end(); ++other_boid)
+            if ( other_boid != my_boid )
             {
-                if ( other_boid != my_boid )
-                {
-                    glm::dvec3 direction = other_boid->position - my_boid->position;
-                    double dist = glm::length(direction);
-
-                    // separation/alignment/cohesion
-                    if (dist < rs ) { speedS -= direction; countS++; }
-                    if (dist < ra ) { speedA += other_boid->speed; countA++; }
-                    if (dist < rc ) { speedC += direction; countC++; }
-                }
-
-            }
-
-            // interaction avec les boids des cellules voisines
-            for(cell_boids = virtualBoids.begin(); cell_boids != virtualBoids.end(); ++cell_boids)
-            {
-                glm::dvec3 direction = cell_boids->boid.position - my_boid->position;
+                glm::dvec3 direction = other_boid->position - my_boid->position;
                 double dist = glm::length(direction);
 
-                double w = cell_boids->weight;
                 // separation/alignment/cohesion
-                if (dist < rs ) { speedS -= w*direction; countS+=w; }
-                if (dist < ra ) { speedA += w*cell_boids->boid.speed; countA+=w; }
-                if (dist < rc ) { speedC += w*direction; countC+=w; }
-
+                if (dist < rs ) { speedS -= direction; countS++; }
+                if (dist < ra ) { speedA += other_boid->speed; countA++; }
+                if (dist < rc ) { speedC += direction; countC++; }
             }
-            speedC = countC>0?speedC/countC:speedC;
-            speedA = countA>0?speedA/countA:speedA;
-            speedS = countS>0?speedS/countS:speedS;
 
-            *my_speed_increment =
-                wc*speedC+
-                wa*speedA+
-                ws*speedS;
         }
+
+        //interaction avec les boids des cellules voisines
+        for(cell_boids = virtualBoids.begin(); cell_boids != virtualBoids.end(); ++cell_boids)
+        {
+            glm::dvec3 direction = cell_boids->boid.position - my_boid->position;
+            double dist = glm::length(direction);
+
+            double w = cell_boids->weight;
+            // separation/alignment/cohesion
+            if (dist < rs ) { speedS -= w*direction; countS+=w; }
+            if (dist < ra ) { speedA += w*cell_boids->boid.speed; countA+=w; }
+            if (dist < rc ) { speedC += w*direction; countC+=w; }
+
+        }
+        speedC = countC>0?speedC/countC:speedC;
+        speedA = countA>0?speedA/countA:speedA;
+        speedS = countS>0?speedS/countS:speedS;
+
+        *my_speed_increment =
+            wc*speedC+
+            wa*speedA+
+            ws*speedS;
     }
 
 
     // apply the speed increment
+    for(my_boid = boids.begin(), my_speed_increment = speedIncrement.begin();
+        my_boid != boids.end();
+        ++my_boid, ++my_speed_increment)
     {
-        for(my_boid = boids.begin(), my_speed_increment = speedIncrement.begin();
-            my_boid != boids.end();
-            ++my_boid, ++my_speed_increment)
-        {
-            // increment the speed
-            my_boid->speed += *my_speed_increment;
+        // increment the speed
+        my_boid->speed += *my_speed_increment;
 
-            // limit the speed
-            double s = glm::length(my_boid->speed);
-            if (s>vmax)
-                my_boid->speed *= vmax/s;
+        // limit the speed
+        double s = glm::length(my_boid->speed);
+        if (s>vmax)
+            my_boid->speed *= vmax/s;
 
-            my_boid->position += my_boid->speed;
-            my_boid->position = glm::fract(my_boid->position);
-        }
+        my_boid->position += glm::dvec3(my_boid->speed);
+        my_boid->position = glm::fract(my_boid->position);
     }
 }
 

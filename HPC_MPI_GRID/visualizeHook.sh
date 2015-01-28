@@ -7,4 +7,5 @@ do
     i=$(echo $file | cut -d'_' -f2)
     rm boids_${i}.xyz
     cat boids_${i}_*.xyz > boids_${i}.xyz
+    rm boids_${i}_*.xyz
 done

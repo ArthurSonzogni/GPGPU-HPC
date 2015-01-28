@@ -213,15 +213,10 @@ __global__ void updateLists(int *cellFirst, int *cellLast, int *cellNeighbors, i
 							float *boidPosition, int *boidNext, int *boidPrevious, 
 							int *boidCell, int nbBoids)
 {
-	return;
-	// TODO : fix this method
 	int x = blockIdx.x * blockDim.x + threadIdx.x;
 	int y = blockIdx.y * blockDim.y + threadIdx.y;
 	int rank = x*blockDim.y*gridDim.y + y;
 	if(rank >= gridSize*gridSize*gridSize) return;
-
-	int cellPosition[3];
-	getGridPosition(rank, gridSize, cellPosition);
 
 	int currentIndex = cellFirst[rank];
 	while(currentIndex != -1)
@@ -244,7 +239,7 @@ __global__ void updateLists(int *cellFirst, int *cellLast, int *cellNeighbors, i
 			newRankIndex += 1;
 		if(z > cellDimension[6*rank+5])
 			newRankIndex += 1;
-		int newRank = cellNeighbors[newRankIndex];
+		int newRank = cellNeighbors[27*rank+newRankIndex];
 		if(newRank != rank)
 		{
 			// If currentIndex is the head of the list
@@ -278,7 +273,7 @@ __global__ void updateLists(int *cellFirst, int *cellLast, int *cellNeighbors, i
 		// Move, one direction at a time
 		for(int i = 0 ; i < 27 ; i++)
 		{
-			if(newRankIndex == i)
+			if(newRankIndex == i && newRank != rank)
 			{
 				// If the list of the new cell is empty
 				if(cellFirst[newRank] == -1)

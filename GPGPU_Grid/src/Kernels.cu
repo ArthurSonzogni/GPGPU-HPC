@@ -188,7 +188,7 @@ __global__ void updateSpeedPosition(float *positions, float *speed, float *speed
 		speed[3*index] += speedIncrement[3*index];
 		speed[3*index+1] += speedIncrement[3*index+1];
 		speed[3*index+2] += speedIncrement[3*index+2];
-		float maxSpeed = 0.2;
+		float maxSpeed = 0.08;
 		float s = sqrt(speed[3*index]*speed[3*index] + speed[3*index+1]*speed[3*index+1] + speed[3*index+2]*speed[3*index+2]);
 		if(s > maxSpeed)
 		{

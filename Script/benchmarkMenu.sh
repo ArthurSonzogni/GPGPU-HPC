@@ -9,6 +9,5 @@ for i in $folder
 do
     cd $here/../$i
     cmake -DRUN_ARGS="-write;0;-agents;1024" .
-    make
-    time make run
+    make run
 done

@@ -112,11 +112,93 @@ Grenoble, le \today
 
 \section{Présentation des différents algorithmes}
 \subsection{Algorithme séquentiel}
+
+
 \subsection{Parallèlisation par agents (OpenMP)}
+Le boucle principale parcours chaques agents pour déterminer sont incrément de vitesse.
+L'algorithme se contente simplement de parallèliser cette boucle.
+
 \subsection{Parallèlisation par agents (MPI)}
+Ici encore, on parallélise la boucle parcourant chaques agents.
+Chaques processus à en charge une certaine proportion des boids.
+Pour effectuer ces calculs il a besoin des positions et vitesse des boids géré par les autres processus.
+Pour ce faire, après chaque tours, chaques processus effectue un envoie multicast de l'ensemble des boids dont il à la charge.
+
+\begin{align*}
+    \text{Travail par processeur} &: O\left( \frac n p \times n \right)  \\
+    \text{Echange par processeur} &: O\left(n\right)
+\end{align*}
+
+Ainsi si $n \sim p$
+
+\begin{align*}
+    \text{Travail par processeur} &: O\left( n \right)  \\
+    \text{Echange par processeur} &: O\left(n\right)
+\end{align*}
+
 \subsection{Parallèlisation par agents (CUDA)}
+
+On effectue le même principe mais en utilisant la carte graphique.
+
+\begin{align*}
+    \text{Travail par cuda thread} &: O\left( \frac n p \times n \right)  \\
+    \text{Accès mémoire globale} &: O\left(n\right)
+\end{align*}
+
+Ainsi si $n \sim p$
+
+\begin{align*}
+    \text{Travail par cuda thread} &: O\left( n \right)  \\
+    \text{Accès mémoire globale} &: O\left(n\right)
+\end{align*}
+
 \subsection{Parallèlisation spatiale (Grille régulière) (MPI)}
-Pour cet algorithme, on subdivise l'espace en une grille régulière de $(2^3{^n})$ blocks.
+
+Pour cet algorithme, au lieu de subdiviser par rapport aux agents, on subdivise l'espace en une grille régulière de $n^3$ blocks.
+On effectue les calculs des dépendances entre boids qui sont dans le même blocs.
+On approxime l'influence des boids des blocs voisins comme la présence d'un gros boids virtuel de position et de vitesse représentant la moyennes du block
+et de poids la somme des poids du bloc.
+
+Une étape de l'algorithme se résume à :
+\begin{itemize}
+    \item Calcul du boids virtuel
+    \item Envoie et réception des boids virtuel des voisins.
+    \item Calcul de la nouvelle position et vitesse (influence des boids du bloc et des 6 boids virtuels voisins).
+    \item Calcul des boids sortant.
+    \item Envoie des boids sortant vers les blocs voinsin et réception des boids entrant.
+\end{itemize}
+
+Pour le calcul des complexité, on fera l'hypothèse que le nombre de boids par bloc reste suffisament constant.
+Cette dernière n'est pas vraiment respecté en pratique et on peut voir des ralentissement lorsque qu'un trop gros groupe de boids se forme.
+
+\begin{align*}
+    \text{Travail par processeur} &: O\left( \left(\frac np \right)^2 \right)  \\
+    \text{Echange par processeur} &: O\left( \left(\frac np \right)^2 \right)
+\end{align*}
+
+Ainsi si $n \sim p$
+
+\begin{align*}
+    \text{Travail par processeur} &: O\left( 1 \right)  \\
+    \text{Echange par processeur} &: O\left( 1 \right)
+\end{align*}
+
+On a donc un système qui passe très bien à l'échelle. On ne communique qu'avec les 6 blocks voisin.
+Le principale défaut est qu'on utilise l'approximation du boids virtuel. La simulation est très rapidement différente que pour la simulation séquentiel, néanmoins, le comportement global est bien le même.
+
 \subsection{Parallèlisation spatiale (Grille régulière) (CUDA)}
+On effectue le même principe mais en utilisant la carte graphique.
+
+\begin{align*}
+    \text{Travail par cuda thread} &: O\left( \frac n p \times rc^2 \times n \right)  \\
+    \text{Accès mémoire globale par thread} &: O\left( \frac n p \times rc^2 \times n \right)
+\end{align*}
+
+Ainsi si $n \sim p$
+
+\begin{align*}
+    \text{Travail par cuda thread} &: O\left( rc^2 \times n \right)  \\
+    \text{Accès mémoire globale} &: O\left( rc^2 \times n \right)
+\end{align*}
 
 \end{document}

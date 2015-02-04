@@ -3,7 +3,7 @@
 here=$(dirname $(pwd)/$0)
 cd $here
 
-folder="Sequential HPC_OpenMP HPC_MPI_GRID HPC_MPI GPGPU_simple"
+folder="Sequential HPC_OpenMP HPC_MPI_GRID HPC_MPI GPGPU_simple GPGPU_Grid"
 
 for i in $folder
 do

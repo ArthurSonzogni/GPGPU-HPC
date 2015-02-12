@@ -84,15 +84,13 @@ void Simulator::init()
 	gpuCheck(cudaMemcpy(position_cuda, &(position[0]), 3*agent*sizeof(float), cudaMemcpyHostToDevice));
 
 	// init speed to zero
-    int blockDim;
-    int minGridSize;
-    cudaOccupancyMaxPotentialBlockSize(&minGridSize, &blockDim, initToZero, 0, 3*agent);
+    int blockDim = std::min(512, 3*agent);
     int gridDim = (3*agent + blockDim - 1) / blockDim; 
     initToZero<<<gridDim,blockDim>>>(speed_cuda, 3*agent);
     gpuCheck(cudaGetLastError());
 
 	// init lists & neighbors
-    cudaOccupancyMaxPotentialBlockSize(&minGridSize, &blockDim, initCells, 0, gridSize*gridSize*gridSize);
+	blockDim = std::min(512, gridSize*gridSize*gridSize);
     gridDim = (gridSize*gridSize*gridSize + blockDim - 1) / blockDim; 
 	initCells<<<gridDim,blockDim>>>(cellFirst_cuda, cellLast_cuda, cellNeighbors_cuda, cellCount_cuda, cellDimension_cuda, cellSize, gridSize, position_cuda, boidNext_cuda, boidPrevious_cuda, boidCell_cuda, agent);
 }
@@ -117,11 +115,11 @@ void Simulator::run()
 void Simulator::oneStep()
 {
 
-    int blockDim,minGridSize,gridDim,dataSize;
+    int blockDim,gridDim,dataSize;
 
     // computeSpeedIncrement
     dataSize = agent;
-    cudaOccupancyMaxPotentialBlockSize(&minGridSize, &blockDim, initToZero, 0, dataSize);
+	blockDim = std::min(512, dataSize);
     gridDim = (dataSize + blockDim - 1) / blockDim; 
 	computeSpeedIncrement<<<blockDim,gridDim>>>(position_cuda, speed_cuda, speedIncrement_cuda, boidNext_cuda, boidCell_cuda, dataSize, rs,ra,rc, ws,wa,wc, cellFirst_cuda, cellNeighbors_cuda);
 	cudaThreadSynchronize();
@@ -130,14 +128,15 @@ void Simulator::oneStep()
 
     // updatePosition
     dataSize = agent;
-    cudaOccupancyMaxPotentialBlockSize(&minGridSize, &blockDim, initToZero, 0, dataSize);
+	blockDim = std::min(512, dataSize);
     gridDim = (dataSize + blockDim - 1) / blockDim; 
 	updateSpeedPosition<<<blockDim,gridDim>>>(position_cuda, speed_cuda, speedIncrement_cuda, dataSize, vmax);
     gpuCheck(cudaGetLastError());
 
 	// updateList
-	gridDim = 1;
-	blockDim = gridSize*gridSize*gridSize;
+    dataSize = gridSize*gridSize*gridSize;
+	blockDim = std::min(512, dataSize);
+    gridDim = (dataSize + blockDim - 1) / blockDim; 
 	updateLists<<<gridDim,blockDim>>>(cellFirst_cuda, cellLast_cuda, cellNeighbors_cuda, cellCount_cuda, cellDimension_cuda, cellSize, gridSize, position_cuda, boidNext_cuda, boidPrevious_cuda, boidCell_cuda, agent);
 }
 

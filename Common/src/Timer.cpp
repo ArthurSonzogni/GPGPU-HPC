@@ -1,17 +1,25 @@
 #include "Timer.hpp"
+#include <sys/time.h>
 #include <iostream>
+using namespace std;
+
+long getSeconds() { 
+    timeval t;    
+    gettimeofday(&t, NULL);
+    return t.tv_sec * 1000 + t.tv_usec /1000.0;
+}
+
 
 void Timer::start()
 {
-	startTime = clock();
+    startTime = getSeconds();
 }
 
 void Timer::display(const char *message)
 {
-	clock_t dt = clock() - startTime;
 	if(message)
-		std::cout << message << " : ";
+		std::cerr << message << " : ";
 	else
-		std::cout << "Timer : ";
-	std::cout << ((float)dt)/CLOCKS_PER_SEC << "s" << std::endl;
+		std::cerr << "Timer : ";
+	std::cerr << float( getSeconds() - startTime )/1000.f << "s" << std::endl;
 }

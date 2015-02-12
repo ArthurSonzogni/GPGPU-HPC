@@ -13,7 +13,7 @@ select choix in \
 do
    case $REPLY in
       1) ./Script/visualizeMenu.sh ;;
-      2) ./Script/benchmarkMenu.sh ;;
+      2) ./Script/benchmark.sh ;;
       3) exit ;;
       *) echo "Choix invalide"  ;;
    esac

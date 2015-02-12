@@ -5,9 +5,20 @@ cd $here
 
 folder="Sequential HPC_OpenMP HPC_MPI_GRID HPC_MPI GPGPU_simple GPGPU_Grid"
 
-for i in $folder
+steps=10
+
+for agent in 1000 2000 3000 4000
 do
-    cd $here/../$i
-    cmake -DRUN_ARGS="-write;0;-agents;1024" .
-    make run
+    echo "+――――――――――――――――――――――――――+"
+    echo "|   agent = "$agent
+    echo "+――――――――――――――――――――――――――+"
+    for i in $folder
+    do
+        echo "    +――――――――――――――――――――――――――+"
+        echo "    |   program = "$i
+        echo "    +――――――――――――――――――――――――――+"
+        cd $here/../$i
+        cmake -DRUN_ARGS="-write;0;-agents;"$agent";-steps;"$steps .
+        make run
+    done
 done

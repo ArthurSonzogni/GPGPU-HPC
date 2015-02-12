@@ -18,7 +18,7 @@ do
         echo "    |   program = "$i
         echo "    +――――――――――――――――――――――――――+"
         cd $here/../$i
-        cmake -DRUN_ARGS="-write;0;-agents;"$agent";-steps;"$steps .
-        make run
+        cmakeResult=$(cmake -DRUN_ARGS="-write;0;-agents;"$agent";-steps;"$steps .)
+        result=$(make run)
     done
 done

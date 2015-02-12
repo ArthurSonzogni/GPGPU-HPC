@@ -44,9 +44,7 @@ int main(int argc, const char *argv[])
     double vmax =  arguments.get<double>("vmax");
     bool write = arguments.get<bool>("write");
     
-	if(mpi_rank == 0) chrono.start();
     Simulator simulator(mpi_rank,mpi_size,agents,steps,wc,wa,ws,rc,ra,rs,vmax,write);
-	if(mpi_rank == 0) chrono.display("Initialization");
 
 	if(mpi_rank == 0) chrono.start();
     simulator.run();

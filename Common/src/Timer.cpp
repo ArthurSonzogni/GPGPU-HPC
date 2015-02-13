@@ -18,7 +18,7 @@ void Timer::start()
 void Timer::display(const char *message)
 {
 	if(message)
-		std::cerr << message << " : ";
+		std::cerr << "    " << message << " : ";
 	else
 		std::cerr << "Timer : ";
 	std::cerr << float( getSeconds() - startTime )/1000.f << "s" << std::endl;

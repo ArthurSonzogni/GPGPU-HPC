@@ -27,6 +27,7 @@
 %\usepackage[draft]{graphicx}
 \usepackage[nottoc, notlof, notlot]{tocbibind}
 \setlength{\parindent}{0cm} % Défini la largeur de l'alinéa de 1cm.
+\usepackage{xcolor,colortbl}
 
 
 
@@ -224,16 +225,24 @@ On effectue le même principe mais en utilisant la carte graphique.
 
 \begin{align*}
     \text{Travail} &: O\left( n^2 \right) \\
-    \text{Travail par cuda thread} &: O\left( \frac n p \times rc^2 \times n \right)  \\
-    \text{Accès mémoire globale par thread} &: O\left( \frac n p \times rc^2 \times n \right)
+    \text{Travail par cuda thread} &: O\left( \frac n p \times rc^3 \times n \right)  \\
+    \text{Accès mémoire globale par thread} &: O\left( \frac n p \times rc^3 \times n \right)
 \end{align*}
 
 Ainsi si $n \sim p$
 
 \begin{align*}
     \text{Travail} &: O\left( n^2 \right) \\
-    \text{Travail par cuda thread} &: O\left( rc^2 \times n \right)  \\
-    \text{Accès mémoire globale} &: O\left( rc^2 \times n \right)
+    \text{Travail par cuda thread} &: O\left( rc^3 \times n \right)  \\
+    \text{Accès mémoire globale} &: O\left( rc^3 \times n \right)
+\end{align*}
+
+Si de plus  $ rc^3 \sim \frac 1n$  ( Nombre constant de boids dans la sphère de rayon rc)
+
+\begin{align*}
+    \text{Travail} &: O\left( n^2 \right) \\
+    \text{Travail par cuda thread} &: O\left( 1 \right)  \\
+    \text{Accès mémoire globale} &: O\left( 1\right)
 \end{align*}
 
 \section{Benchmarks}
@@ -244,30 +253,45 @@ Nous ne faisons que varier le nombre d'agents.
 
 Nous utilisons les machines de l'ensimag.
 
+Le programme HPC\_MPI est bien trop lent du fait de ces trop grandes communications.
+Il n'est donc pas présent dans le benchmark.
 
 \begin{tabular}{|r|c|c|c|c|c|}
 \hline
 Nombre d'agents &Sequential  &HPC\_OpenMP  &HPC\_MPI\_GRID    &HPC\_GPU\_Simple  &HPC\_GPU\_GRID \\
 \hline
-1000&    4.71    &1.59    &5.88    &10.18   &6.70 \\
+1000&    4.71    &\cellcolor{green!25}1.59    &5.88    &\cellcolor{red!25}10.18   &6.70 \\
 \hline
-2000&    19.46   &6.40    &6.83    &21.37   &14.46 \\
+2000&    19.46   &\cellcolor{green!25}6.40    &6.83    &\cellcolor{red!25}21.37   &14.46 \\
 \hline
-3000&    42.15   &14.05   &14.00   &32.83   &22.62 \\
+3000&    \cellcolor{red!25}42.15   &14.05   &\cellcolor{green!25}14.00   &32.83   &22.62 \\
 \hline
-4000&    71.86   &24.63   &17.45   &45.66   &31.10 \\
+4000&    \cellcolor{red!25}71.86   &24.63   &\cellcolor{green!25}17.45   &45.66   &31.10 \\
 \hline
-5000&    111.412 &37.926  &24.214  &58.947  &44.251 \\
+5000&    \cellcolor{red!25}111.412 &37.926  &\cellcolor{green!25}24.214  &58.947  &44.251 \\
 \hline
-6000&    162.402 &55.542  &30.664  &70.334  &58.64 \\
+6000&    \cellcolor{red!25}162.402 &55.542  &\cellcolor{green!25}30.664  &70.334  &58.64 \\
 \hline
-7000&    226.902 &76.452  &40.654  &86.295  &75.249 \\
+7000&    \cellcolor{red!25}226.902 &76.452  &\cellcolor{green!25}40.654  &86.295  &75.249 \\
 \hline
 \end{tabular}
 
-\includegraphics[width=\linewidth]{imageGlobale}
 
-\includegraphics[width=\linewidth]{imageGlobalLight}
+\includegraphics[width=\linewidth]{ImageGlobale}
+
+\paragraph{Remarques}
+
+On remarque que pour un nombre élevé d'agent, les programmes parallèle sont bien plus rapide que le programme séquentiel.
+
+\includegraphics[width=\linewidth]{ImageGlobalLight}
+
+\paragraph{Remarques}
+
+Les programmes à base de grille évoluent de manière moins quadratique que les autres.
+
+Le programme HPC\_Open\_MP bénéficie de la mémoire partagé et offre de bonne performance pour un nombre faible et moyen d'agents.
+En revanche sont comportement quadratique va finir par le disqualifier.
+Il se fait dépasser par HPC\_MPI\_GRID à partir de 3000 agents puis par HPC\_CPU\_GRID à partir de 7000 agents.
 
 \end{document}
 

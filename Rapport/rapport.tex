@@ -108,10 +108,9 @@ Ceci nous permet d'effectuer des benchmarks intéressants.
     \item \textbf{Sequential}: programme de base non parallélisé.
     \item \textbf{HPC\_OpenMP}: parallélisation par groupes fixes d'agents (OpenMP)
     \item \textbf{HPC\_MPI}: Parallélisation par groupes fixes d'agents (MPI)
-    \item \textbf{HPC\_MPI\_GRID}: Parallélisation spatiale : \\
-                        groupes dynamique d'agents dans des cellules d'une grille.
+    \item \textbf{HPC\_MPI\_GRID}: Parallélisation spatiale, on regroupe les boids qui appartiennent à une même cellule spatiale.
     \item \textbf{GPGPU\_simple}: Parallélisation par groupes fixes d'agents (Cuda)
-    \item \textbf{GPGPU\_Grid}: Parallélisation spatiale : 
+    \item \textbf{GPGPU\_Grid}: Parallélisation spatiale en cellules spatiales.
 
 \end{enumerate}
 
@@ -221,7 +220,11 @@ La simulation est très rapidement différente des autres simulations, néanmoin
 \subsection{GPGPU\_Grid}
 On effectue le même principe mais en utilisant la carte graphique.
 
-\textbf{TOTO explication}
+
+\textbf{TODO explication}
+Je pense que tu peux expliquer que le calcul est exacte, que cela dépend de la taille du plus grand rayon en paramètre.
+Que on subdivise en cellules et en boids.
+
 
 \begin{align*}
     \text{Travail} &: O\left( n^2 \right) \\

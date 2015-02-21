@@ -119,7 +119,8 @@ Ceci nous permet d'effectuer des benchmarks intéressants.
 \subsection{Sequential}
 
 Pour chaque agent, on calcule sa nouvelle vitesse en fonction de l'ensemble des autres agents.
-C'est cela qui donne une complexité quadratique au modèle.
+C'est cela qui donne une complexité quadratique au modèle. 
+
 
 On note n le nombre d'agents :
 
@@ -144,7 +145,7 @@ Ainsi si $n\sim p$
 
 \subsection{HPC\_MPI}
 Ici encore, on parallélise la boucle parcourant les agents.
-Chaques processus se charge d'une certaine partie des agents.
+Chaque processus se charge d'une certaine partie des agents.
 Pour effectuer ces calculs il a besoin des positions et vitesse des agents gérés par les autres processus.
 Pour ce faire, après chaque pas de calcul, tous les processus effectuent un envoi multicast de l'ensemble des agents dont il a la charge.
 
@@ -164,7 +165,7 @@ Ainsi si $n \sim p$
 
 \subsection{GPGPU\_Simple}
 
-On appliqie le même principe mais en utilisant la carte graphique. Un thread de calcul est lancé par agent qui calcule l'accélération en fonction de tous les autres agents.
+On applique le même principe mais en utilisant la carte graphique. Un thread de calcul est lancé par agent qui calcule l'accélération en fonction de tous les autres agents.
 
 \begin{align*}
     \text{Travail} &: O\left( n^2 \right) \\
@@ -195,7 +196,7 @@ Une étape de l'algorithme se résume à :
     \item Envoie des agents sortant vers les cellules voisines et réception des agents entrant.
 \end{itemize}
 
-Pour le calcul des complexité, on fera l'hypothèse que le nombre d'agent par cellule reste suffisament constant.
+Pour le calcul des complexité, on fera l'hypothèse que le nombre d'agent par cellule reste suffisamment constant.
 Cette dernière hypothèse n'est pas vraiment respectée en pratique et on peut voir des ralentissement lorsque qu'un trop gros groupe d'agents se forme.
 
 \begin{align*}
@@ -246,14 +247,14 @@ Si de plus  $ rc^3 \sim \frac 1n$  ( Nombre constant d'agents dans la sphère de
     \text{Accès mémoire globale} &: O\left( 1\right)
 \end{align*}
 
-\paragraph{Remarque}~ \\
+\paragraph{Remarque}~\\
 Contrairement à HPC\_MPI\_Grid, ce programme n'utilise pas d'agent virtuel, ce qui fait qu'il est moins efficace, mais donne des résultats exacts.
 
 \section{Benchmarks}
 
 \subsection{Nombre d'agents}
 
-Dans ce premier graphique nous souhaitons comparer globalement chaques algorithmes.
+Dans ce premier graphique nous souhaitons comparer globalement chaque algorithmes.
 
 Nous ne faisons que varier le nombre d'agents.
 
@@ -314,9 +315,11 @@ Nous affichons le temps de calcul de l'accélération, le temps utile, et le tem
 \paragraph{}
 Finalement, ces tests n'ont pas étés effectués sur les machines de l'ENSIMAG, ce qui explique les temps d'exécution différents.
 
+Nous utilisons 10000 agents.
+
 \includegraphics[width=\linewidth]{RadiusPerf}
 
-Nous pouvons donc voir que le découpage spatial est contre-prouctif si $RMax > 0.23$ par contre, plus ce rayon est faible, plus l'algorithme est performant, avec une limite tout de même étant donné qu'il ne peut y avoir plus de 512 cellules dans la grille.
+Nous pouvons donc voir que le découpage spatial est contre-productif si $RMax > 0.23$ par contre, plus ce rayon est faible, plus l'algorithme est performant, avec une limite tout de même étant donné qu'il ne peut y avoir plus de 512 cellules dans la grille.
 \paragraph{}
 \begin{tabular}{|r|c|}
 	\hline
@@ -336,7 +339,14 @@ Nous pouvons donc voir que le découpage spatial est contre-prouctif si $RMax > 
 	\hline
 \end{tabular}
 \paragraph{}
-Nous pouvons aussi constater que le ratio $\frac{\text{Temps utile}}{\text{Temps total}}$ augmente avec le rayon, ce qui est dû au fait que, plus le rayon est grand, plus il y a d'agents par cellules et moins il y a de cellules. Le calcul de l'accélération est une fonction quadratique du nombre d'agents par cellule alors que le temps de mise à jour est une fonction linéaire du même paramètre, ce qui explique cette évolution.
+Nous pouvons aussi constater que le ratio $\frac{\text{Temps utile}}{\text{Temps total}}$ augmente avec le rayon, ce qui est dû au fait que, plus le rayon est grand, plus il y a d'agents par cellules et moins il y a de cellules. Le calcul de l'accélération (ou plutôt de la nouvelle vitesse)  est une fonction quadratique du nombre d'agents par cellule alors que le temps de mise à jour est une fonction linéaire du même paramètre, ce qui explique cette évolution.
+
+
+\section{Conclusion}
+
+Nous avons expérimenté plusieurs façon d'implémenter la simulation des boids à travers 6 programmes différents en utilisant OpenMP et Cuda.
+Nous avons estimé la complexité des ces algorithmes.
+Enfin, nous avons présenté des benchmarks de ceux-ci.
 
 \end{document}
 

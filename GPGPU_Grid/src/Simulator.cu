@@ -43,10 +43,10 @@ Simulator::Simulator(
 void Simulator::init()
 {
 	float maxRadius = std::max(std::max(ra,rs),rc);
-	gridSize = 1;
-	cellSize = 1.0;
+	gridSize = 3;
+	cellSize = 1.0/gridSize;
 	// TODO Modify the kernel to allow more than 512 cells
-	while(cellSize > maxRadius && gridSize <= 8)
+	while(cellSize >= maxRadius && gridSize <= 8)
 	{
 		gridSize += 1;
 		cellSize = (float)1/gridSize;
@@ -103,18 +103,19 @@ void Simulator::run()
 	{
 		oneStep();
 		progressBar.update(i/float(step));
-		gpuCheck(cudaMemcpy(&(position[0]), position_cuda, 3*agent*sizeof(float), cudaMemcpyDeviceToHost));
+		if(write) {
+			gpuCheck(cudaMemcpy(&(position[0]), position_cuda, 3*agent*sizeof(float), cudaMemcpyDeviceToHost));
 
-		// print the result
-		std::stringstream filename;
-		filename << "./output/boids_" << i << ".xyz";
-		if (write)  save(filename.str()); 
+			// print the result
+			std::stringstream filename;
+			filename << "./output/boids_" << i << ".xyz";
+			save(filename.str()); 
+		}
 	}
 }
 
 void Simulator::oneStep()
 {
-
     int blockDim,gridDim,dataSize;
 
     // computeSpeedIncrement

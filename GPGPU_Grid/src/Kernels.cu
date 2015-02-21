@@ -112,15 +112,14 @@ __global__ void computeSpeedIncrement(	float *positions, float *speed, float *sp
 			int i = cellFirst[currentRank];
 			while(i != -1)
 			{
-				if(i != index)
-				{
+				if(i != index) {
 
 					//glm::vec3 direction = position[j] - position[i];
 					float directionX = positions[3*i]-positions[3*index];
 					float directionY = positions[3*i+1]-positions[3*index+1];
 					float directionZ = positions[3*i+2]-positions[3*index+2];
 					float dist = sqrt(directionX*directionX + directionY*directionY + directionZ*directionZ);
-					
+
 					// separation/alignment/cohesion
 					if (dist < rs )
 					{
@@ -128,7 +127,7 @@ __global__ void computeSpeedIncrement(	float *positions, float *speed, float *sp
 						speedSY -= directionY;
 						speedSZ -= directionZ;
 						countS++;
-					
+
 					}
 					if (dist < ra )
 					{

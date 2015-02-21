@@ -101,16 +101,16 @@ Grenoble, le \today
 
 \section{Introduction}
 
-L'idée que nous avons eut pour ces 2 projets et d'effectuer plusieurs versions du programme en utilisant différentes technologies et différentes approches.
+L'idée que nous avons eu pour ces 2 projets était d'effectuer plusieurs versions du programme en utilisant différentes technologies et différentes approches.
 Ceci nous permet d'effectuer des benchmarks intéressants.
 
 \begin{enumerate}
     \item \textbf{Sequential}: programme de base non parallélisé.
     \item \textbf{HPC\_OpenMP}: parallélisation par groupes fixes d'agents (OpenMP)
     \item \textbf{HPC\_MPI}: Parallélisation par groupes fixes d'agents (MPI)
-    \item \textbf{HPC\_MPI\_GRID}: Parallélisation spatiale, on regroupe les boids qui appartiennent à une même cellule spatiale.
-    \item \textbf{GPGPU\_simple}: Parallélisation par groupes fixes d'agents (Cuda)
-    \item \textbf{GPGPU\_Grid}: Parallélisation spatiale en cellules spatiales.
+    \item \textbf{HPC\_MPI\_GRID}: Parallélisation spatiale, on regroupe les agents qui appartiennent à une même cellule spatiale.
+    \item \textbf{GPGPU\_simple}: Parallélisation par agents simple (Cuda)
+    \item \textbf{GPGPU\_Grid}: Parallélisation par agent avec connaissance des voisins.
 
 \end{enumerate}
 
@@ -118,18 +118,18 @@ Ceci nous permet d'effectuer des benchmarks intéressants.
 \section{Présentation des différents algorithmes}
 \subsection{Sequential}
 
-Pour chaques boids, on calcul sa nouvelle vitesse en fonction de l'ensemble des autres boids.
+Pour chaque agent, on calcule sa nouvelle vitesse en fonction de l'ensemble des autres agents.
 C'est cela qui donne une complexité quadratique au modèle.
 
-On note n le nombre de boids :
+On note n le nombre d'agents :
 
 \begin{align*}
     \text{Travail} &: O\left( n^2 \right)  \\
 \end{align*}
 
 \subsection{HPC\_OpenMP}
-Le boucle principale parcours chaques agents pour déterminer sont incrément de vitesse.
-L'algorithme se contente simplement de parallèliser cette boucle.
+Le boucle principale parcourt les agents pour déterminer son incrément de vitesse.
+L'algorithme se contente simplement de paralléliser cette boucle.
 
 \begin{align*}
     \text{Travail} &: O\left( n^2 \right)  \\
@@ -143,10 +143,10 @@ Ainsi si $n\sim p$
 \end{align*}
 
 \subsection{HPC\_MPI}
-Ici encore, on parallélise la boucle parcourant chaques agents.
-Chaques processus à en charge une certaine proportion des boids.
-Pour effectuer ces calculs il a besoin des positions et vitesse des boids géré par les autres processus.
-Pour ce faire, après chaque tours, chaques processus effectue un envoie multicast de l'ensemble des boids dont il à la charge.
+Ici encore, on parallélise la boucle parcourant les agents.
+Chaques processus se charge d'une certaine partie des agents.
+Pour effectuer ces calculs il a besoin des positions et vitesse des agents gérés par les autres processus.
+Pour ce faire, après chaque pas de calcul, tous les processus effectuent un envoi multicast de l'ensemble des agents dont il a la charge.
 
 \begin{align*}
     \text{Travail} &: O\left( n^2 \right) \\
@@ -164,7 +164,7 @@ Ainsi si $n \sim p$
 
 \subsection{GPGPU\_Simple}
 
-On effectue le même principe mais en utilisant la carte graphique.
+On appliqie le même principe mais en utilisant la carte graphique. Un thread de calcul est lancé par agent qui calcule l'accélération en fonction de tous les autres agents.
 
 \begin{align*}
     \text{Travail} &: O\left( n^2 \right) \\
@@ -182,22 +182,21 @@ Ainsi si $n \sim p$
 
 \subsection{HPC\_MPI\_GRID}
 
-Pour cet algorithme, au lieu de subdiviser par rapport aux agents, on subdivise l'espace en une grille régulière de $n^3$ blocks.
-On effectue les calculs des dépendances entre boids qui sont dans le même blocs.
-On approxime l'influence des boids des blocs voisins comme la présence d'un gros boids virtuel de position et de vitesse représentant la moyennes du block
-et de poids la somme des poids du bloc.
+Pour cet algorithme, au lieu de subdiviser par rapport aux agents, on subdivise l'espace en une grille régulière de $n^3$ cellules.
+On effectue les calculs des dépendances entre agents se trouvant dans la même cellule.
+On approxime l'influence des agents des cellules voisines comme la présence d'un agent virtuel massif de position et de vitesse représentant la moyennes des agents de la cellule et de poids la somme des poids des agents de la cellule.
 
 Une étape de l'algorithme se résume à :
 \begin{itemize}
-    \item Calcul du boids virtuel
-    \item Envoie et réception des boids virtuel des voisins.
-    \item Calcul de la nouvelle position et vitesse (influencé par les boids du bloc et des 6 boids virtuels voisins).
-    \item Calcul des boids sortant.
-    \item Envoie des boids sortant vers les blocs voinsin et réception des boids entrant.
+    \item Calcul de l'agent virtuel
+    \item Envoi et réception des agents virtuel des voisins.
+    \item Calcul de la nouvelle position et vitesse (influencé par les agents de la cellule et des 27 agents virtuels voisins).
+    \item Calcul des agents sortant.
+    \item Envoie des agents sortant vers les cellules voisines et réception des agents entrant.
 \end{itemize}
 
-Pour le calcul des complexité, on fera l'hypothèse que le nombre de boids par bloc reste suffisament constant.
-Cette dernière hypothèse n'est pas vraiment respectée en pratique et on peut voir des ralentissement lorsque qu'un trop gros groupe de boids se forme.
+Pour le calcul des complexité, on fera l'hypothèse que le nombre d'agent par cellule reste suffisament constant.
+Cette dernière hypothèse n'est pas vraiment respectée en pratique et on peut voir des ralentissement lorsque qu'un trop gros groupe d'agents se forme.
 
 \begin{align*}
     \text{Travail} &: O\left( n^2 \right) \\
@@ -213,18 +212,17 @@ Ainsi si $n \sim p$
     \text{Echange par processeur} &: O\left( 1 \right)
 \end{align*}
 
-On a donc un système qui passe très bien à l'échelle. On ne communique qu'avec un nombre constant de blocks : 6.
-Le principale défaut est qu'on utilise l'approximation du boids virtuel.
+On a donc un système qui passe très bien à l'échelle. On ne communique qu'avec un nombre constant de cellules : 27.
+Le principale défaut est qu'on utilise l'approximation de l'agent virtuel.
 La simulation est très rapidement différente des autres simulations, néanmoins, le comportement global est bien le même.
 
 \subsection{GPGPU\_Grid}
-On effectue le même principe mais en utilisant la carte graphique.
-
-
-\textbf{TODO explication}
-Je pense que tu peux expliquer que le calcul est exacte, que cela dépend de la taille du plus grand rayon en paramètre.
-Que on subdivise en cellules et en boids.
-
+\paragraph{}
+Le principe est le même que pour GPGPU\_simple, mais le domaine est découpé en cellules dont la taille dépend du rayon d'action maximum. Chaque agent sait à quelle cellule il appartient, et chaque cellule connaît ses agents ainsi que toutes les cellules voisines.
+\paragraph{}
+Lors du calcul de l'accélération d'un agent, seules la cellule dans laquelle se trouve cet agent et ses voisines directes sont vérifiées. Soit au total 27 cellules. Si le rayon d'action est grand, l'algorithme est donc moins efficace compte tenu de la mise à jour des listes d'appartenance. Par contre, plus le rayon diminue, plus l'algorithme est efficace. 
+\paragraph{}
+Une contrainte très importante est que, lorsqu'un agent change de cellule, la cellule de destination ne reçoive que cet agent. Pour éviter les collisions, nous utilisons la synchronisation de threads de CUDA, mais cela impose que tous les threads se trouvent dans le même bloc. La mise à jour de la liste d'appartenance incombant à la cellule, cela limite le nombre de cellules à 512, soit un cube de 8*8*8. Diminuer le rayon maximum en dessous de 0.125 n'affecte donc plus le temps de calcul a priori.
 
 \begin{align*}
     \text{Travail} &: O\left( n^2 \right) \\
@@ -240,7 +238,7 @@ Ainsi si $n \sim p$
     \text{Accès mémoire globale} &: O\left( rc^3 \times n \right)
 \end{align*}
 
-Si de plus  $ rc^3 \sim \frac 1n$  ( Nombre constant de boids dans la sphère de rayon rc)
+Si de plus  $ rc^3 \sim \frac 1n$  ( Nombre constant d'agents dans la sphère de rayon rc)
 
 \begin{align*}
     \text{Travail} &: O\left( n^2 \right) \\
@@ -248,7 +246,12 @@ Si de plus  $ rc^3 \sim \frac 1n$  ( Nombre constant de boids dans la sphère de
     \text{Accès mémoire globale} &: O\left( 1\right)
 \end{align*}
 
+\paragraph{Remarque}~ \\
+Contrairement à HPC\_MPI\_Grid, ce programme n'utilise pas d'agent virtuel, ce qui fait qu'il est moins efficace, mais donne des résultats exacts.
+
 \section{Benchmarks}
+
+\subsection{Nombre d'agents}
 
 Dans ce premier graphique nous souhaitons comparer globalement chaques algorithmes.
 
@@ -261,8 +264,7 @@ Voici quelques détails particuliers pour les différents algorithmes :
 \begin{description}
     \item {HPC\_MPI} : Bien trop lent du fait de ces trop grandes communications. Il n'est donc pas présenté dans ce benchmark.
     \item {HPC\_MPI\_Grid} : On utilise 6 ordinateurs de l'ensimag.
-    \item {GPGPU\_Grid} : Le rayon de cohésion est grand (0.23). Ceci fait que la taille d'une cellule est grande  et qu'on utilise très peu de threads pour les calculs.
-        C'est pour cela que ce programme n'est pas autant performant que HPC\_MPI\_Grid.
+    \item {GPGPU\_Grid} : Le rayon de cohésion est grand (0.23). Ceci fait que la taille d'une cellule est grande, faisant que la quasi totalité des agents est prise en compte pour le calcul de l'accélération. À cela s'ajoute le temps de mise à jour des listes d'appartenance, ce qui fait que ce programme n'est pas aussi performant que HPC\_MPI\_Grid.
 \end{description}
 
 
@@ -301,7 +303,40 @@ Les programmes à base de grille évoluent de manière moins quadratique que les
 
 Le programme HPC\_Open\_MP bénéficie de la mémoire partagé et offre de bonne performance pour un nombre faible et moyen d'agents.
 En revanche sont comportement quadratique va finir par le disqualifier.
-Il se fait dépasser par HPC\_MPI\_GRID à partir de 3000 agents puis par HPC\_CPU\_GRID à partir de 7000 agents.
+Il se fait dépasser par HPC\_MPI\_GRID à partir de 3000 agents puis par HPC\_GPU\_GRID à partir de 7000 agents.
+
+\subsection{Rayon d'action}
+
+Dans ce graphique, nous nous intéressons à l'impact du rayon d'action maximum -max(rc,ra,rs)- sur les performances de la version GPU avec découpage spatial (HPC\_GPU\_Grid).
+Nous affichons le temps de calcul de l'accélération, le temps utile, et le temps d'exécution total afin de connaître le surcoût engendré par la mise à jour des structures utilisées.
+\paragraph{}
+À titre d'information, le temps de calcul total pour HPC\_GPU\_simple est de 16.25s.
+\paragraph{}
+Finalement, ces tests n'ont pas étés effectués sur les machines de l'ENSIMAG, ce qui explique les temps d'exécution différents.
+
+\includegraphics[width=\linewidth]{RadiusPerf}
+
+Nous pouvons donc voir que le découpage spatial est contre-prouctif si $RMax > 0.23$ par contre, plus ce rayon est faible, plus l'algorithme est performant, avec une limite tout de même étant donné qu'il ne peut y avoir plus de 512 cellules dans la grille.
+\paragraph{}
+\begin{tabular}{|r|c|}
+	\hline
+	RMax & $\frac{\text{Temps utile}}{\text{Temps total}}$ \\
+	\hline
+	0.3 & 0.9 \\
+	\hline
+	0.25 & 0.9 \\
+	\hline
+	0.2 & 0.9 \\
+	\hline
+	0.15 & 0.88 \\
+	\hline
+	0.1 & 0.85 \\
+	\hline
+	0.05 & 0.84 \\
+	\hline
+\end{tabular}
+\paragraph{}
+Nous pouvons aussi constater que le ratio $\frac{\text{Temps utile}}{\text{Temps total}}$ augmente avec le rayon, ce qui est dû au fait que, plus le rayon est grand, plus il y a d'agents par cellules et moins il y a de cellules. Le calcul de l'accélération est une fonction quadratique du nombre d'agents par cellule alors que le temps de mise à jour est une fonction linéaire du même paramètre, ce qui explique cette évolution.
 
 \end{document}
 

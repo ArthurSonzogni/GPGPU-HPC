@@ -170,7 +170,7 @@ On effectue le même principe mais en utilisant la carte graphique.
 \begin{align*}
     \text{Travail} &: O\left( n^2 \right) \\
     \text{Travail par cuda thread} &: O\left( \frac n p \times n \right)  \\
-    \text{Accès mémoire globale} &: O\left(n\right)
+    %\text{Accès mémoire globale} &: O\left(n\right)
 \end{align*}
 
 Ainsi si $n \sim p$
@@ -178,7 +178,7 @@ Ainsi si $n \sim p$
 \begin{align*}
     \text{Travail} &: O\left( n^2 \right) \\
     \text{Travail par cuda thread} &: O\left( n \right)  \\
-    \text{Accès mémoire globale} &: O\left(n\right)
+    %\text{Accès mémoire globale} &: O\left(n\right)
 \end{align*}
 
 \subsection{HPC\_MPI\_GRID}
@@ -192,13 +192,13 @@ Une étape de l'algorithme se résume à :
 \begin{itemize}
     \item Calcul du boids virtuel
     \item Envoie et réception des boids virtuel des voisins.
-    \item Calcul de la nouvelle position et vitesse (influence des boids du bloc et des 6 boids virtuels voisins).
+    \item Calcul de la nouvelle position et vitesse (influencé par les boids du bloc et des 6 boids virtuels voisins).
     \item Calcul des boids sortant.
     \item Envoie des boids sortant vers les blocs voinsin et réception des boids entrant.
 \end{itemize}
 
 Pour le calcul des complexité, on fera l'hypothèse que le nombre de boids par bloc reste suffisament constant.
-Cette dernière n'est pas vraiment respecté en pratique et on peut voir des ralentissement lorsque qu'un trop gros groupe de boids se forme.
+Cette dernière hypothèse n'est pas vraiment respectée en pratique et on peut voir des ralentissement lorsque qu'un trop gros groupe de boids se forme.
 
 \begin{align*}
     \text{Travail} &: O\left( n^2 \right) \\
@@ -214,9 +214,9 @@ Ainsi si $n \sim p$
     \text{Echange par processeur} &: O\left( 1 \right)
 \end{align*}
 
-On a donc un système qui passe très bien à l'échelle. On ne communique qu'avec les 6 blocks voisins.
+On a donc un système qui passe très bien à l'échelle. On ne communique qu'avec un nombre constant de blocks : 6.
 Le principale défaut est qu'on utilise l'approximation du boids virtuel.
-La simulation est très rapidement différente que pour la simulation séquentiel, néanmoins, le comportement global est bien le même.
+La simulation est très rapidement différente des autres simulations, néanmoins, le comportement global est bien le même.
 
 \subsection{GPGPU\_Grid}
 On effectue le même principe mais en utilisant la carte graphique.
@@ -253,8 +253,15 @@ Nous ne faisons que varier le nombre d'agents.
 
 Nous utilisons les machines de l'ensimag.
 
-Le programme HPC\_MPI est bien trop lent du fait de ces trop grandes communications.
-Il n'est donc pas présent dans le benchmark.
+Voici quelques détails particuliers pour les différents algorithmes :
+
+\begin{description}
+    \item {HPC\_MPI} : Bien trop lent du fait de ces trop grandes communications. Il n'est donc pas présenté dans ce benchmark.
+    \item {HPC\_MPI\_Grid} : On utilise 6 ordinateurs de l'ensimag.
+    \item {GPGPU\_Grid} : Le rayon de cohésion est grand (0.23). Ceci fait que la taille d'une cellule est grande  et qu'on utilise très peu de threads pour les calculs.
+        C'est pour cela que ce programme n'est pas autant performant que HPC\_MPI\_Grid.
+\end{description}
+
 
 \begin{tabular}{|r|c|c|c|c|c|}
 \hline
